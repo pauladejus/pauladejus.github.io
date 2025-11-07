@@ -27,7 +27,7 @@ body{
 .hero{
   display: grid;
   place-items: center;
-  padding: clamp(2rem, 4vw, 4rem) 1rem 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem) 1rem 1.5rem; /* tighter top space */
   text-align: center;
 }
 
@@ -36,19 +36,8 @@ body{
   font-size: clamp(2.5rem, 8vw, 5rem);
   line-height: 1.05;
   text-align: center;
-  margin-bottom: 1rem;
-}
-
-.name .first{
-  font-weight: 800;
-  font-size: clamp(2.25rem, 8vw, 5rem);
-  line-height: 1.05;
-}
-
-.name .last{
-  font-weight: 800;
-  font-size: clamp(2.25rem, 8vw, 5rem);
-  line-height: 1.05;
+  margin-bottom: 0.5rem;
+  color: var(--text);
 }
 
 .tagline{
@@ -60,19 +49,12 @@ body{
 
 /* ===== Main / Gallery ===== */
 main{
-  padding: 0 1rem 4rem;
+  padding: 0 1rem 3rem;
 }
 
 .gallery-section{
   margin: 0 auto;
   max-width: 1200px;
-}
-
-.gallery-section h2{
-  font-size: clamp(1.25rem, 2.4vw, 1.5rem);
-  font-weight: 600;
-  margin: 1rem 0 1rem;
-  color: var(--muted);
 }
 
 .grid{
@@ -110,24 +92,12 @@ main{
   margin: 0;
 }
 
-.card img, .placeholder{
+.card img{
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
   background: #22252b;
-}
-
-.placeholder{
-  display: grid;
-  place-items: center;
-  position: relative;
-  isolation: isolate;
-}
-.placeholder::before{
-  content: "Add artwork";
-  color: var(--muted);
-  font-size: .95rem;
 }
 
 figcaption{
