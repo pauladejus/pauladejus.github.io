@@ -1,42 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> Hello </title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 0;
-    }
-    h1 {
-      margin-top: 50px;
-      color: #333;
-    }
-    .gallery {
-      margin-top: 50px;
-    }
-    .gallery img {
-      width: 300px;
-      height: auto;
-      border-radius: 10px;
-      transition: transform 0.3s;
-      cursor: pointer;
-    }
-    .gallery img:hover {
-      transform: scale(1.05);
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paula Dejus — Portfolio</title>
+  <meta name="description" content="Unity Developer & Interactive Media Artist. Creating Virtual Reality Art in Unity since 2016.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Welcome to My Art Gallery</h1>
-  <div class="gallery">
-    <a href="webgl/index.html">
-      <img src="webgl/imagination.jpg" alt="Imagination Art">
-    </a>
-  </div>
+  <header class="hero">
+    <div class="name">
+      <span class="first">Paula</span>
+      <span class="last">Dejus</span>
+    </div>
+    <p class="tagline">Unity Developer / Interactive Media Artist<br>Creating Virtual Reality Art in Unity since 2016.</p>
+  </header>
+
+  <main>
+    <section class="gallery-section" aria-labelledby="work-heading">
+      <h2 id="work-heading">Selected Work</h2>
+
+      <div class="grid">
+        <!-- 1) WebGL piece as requested (first artwork) -->
+        <a class="card" href="webgl/index.html">
+          <figure>
+            <img src="webgl/imagination.jpg" alt="WebGL artwork preview" loading="lazy">
+            <figcaption>
+              <h3>WebGL — Imagination</h3>
+              <p>Interactive Unity/WebGL piece.</p>
+            </figcaption>
+          </figure>
+        </a>
+
+        <!-- Placeholders — replace or duplicate blocks as you add more works -->
+        <a class="card" href="#" aria-disabled="true">
+          <figure>
+            <div class="placeholder" role="img" aria-label="Placeholder artwork"></div>
+            <figcaption>
+              <h3>Project Title</h3>
+              <p>Short description of the piece.</p>
+            </figcaption>
+          </figure>
+        </a>
+
+        <a class="card" href="#" aria-disabled="true">
+          <figure>
+            <div class="placeholder" role="img" aria-label="Placeholder artwork"></div>
+            <figcaption>
+              <h3>Project Title</h3>
+              <p>Short description of the piece.</p>
+            </figcaption>
+          </figure>
+        </a>
+
+        <a class="card" href="#" aria-disabled="true">
+          <figure>
+            <div class="placeholder" role="img" aria-label="Placeholder artwork"></div>
+            <figcaption>
+              <h3>Project Title</h3>
+              <p>Short description of the piece.</p>
+            </figcaption>
+          </figure>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Paula Dejus</p>
+  </footer>
+
+  <script>
+    // Update copyright year automatically
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
