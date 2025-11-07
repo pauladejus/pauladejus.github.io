@@ -37,7 +37,7 @@ body{
   line-height: 1.05;
   text-align: center;
   margin-bottom: 0.5rem;
-  color: var(--text);
+  color: #fff;
 }
 
 .tagline{
