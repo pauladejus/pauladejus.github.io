@@ -33,7 +33,7 @@ body{
 
 .name{
   font-weight: 800;
-  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-size: clamp(3rem, 12vw, 8rem);
   line-height: 1.05;
   text-align: center;
   margin-bottom: 0.5rem;
