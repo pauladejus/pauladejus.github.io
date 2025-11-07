@@ -46,9 +46,8 @@ body{
 
 .name .last{
   font-weight: 800;
-  font-size: clamp(2rem, 7vw, 4.25rem);
+  font-size: clamp(2.25rem, 8vw, 5rem);
   line-height: 1.05;
-  opacity: .9;
 }
 
 .tagline{
