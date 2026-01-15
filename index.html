@@ -3,42 +3,498 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Paula Dejus — Portfolio</title>
+  <title>Paula Dejus – Portfolio</title>
   <meta name="description" content="Unity Developer & Interactive Media Artist. Creating Virtual Reality Art in Unity since 2016.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ===== Base ===== */
+    :root{
+      --bg: #0b0b0c;
+      --text: #e8e8ea;
+      --muted: #a9abb3;
+      --card: #15161a;
+      --cardHover: #1d1f25;
+      --accent: #a746df;
+    }
+
+    *{ box-sizing: border-box; }
+
+    html, body{
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body{
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ===== Hero / Name ===== */
+    .hero{
+      display: grid;
+      place-items: center;
+      padding: clamp(1.25rem, 3vw, 2rem) 1rem 1.5rem;
+      text-align: center;
+    }
+
+    .name{
+      font-weight: 800;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      line-height: 1.05;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      color: #fff;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .tagline{
+      margin-top: .25rem;
+      color: var(--muted);
+      font-weight: 400;
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
+    }
+
+    /* ===== Filters ===== */
+    .filters{
+      max-width: 1200px;
+      margin: 0 auto 2rem;
+      padding: 0 1rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-btn{
+      padding: 0.5rem 1.25rem;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s ease;
+      font-family: inherit;
+    }
+
+    .filter-btn:hover{
+      background: var(--cardHover);
+      border-color: rgba(255,255,255,.12);
+    }
+
+    .filter-btn.active{
+      background: var(--accent);
+      color: #0b0b0c;
+      border-color: var(--accent);
+    }
+
+    /* ===== Main / Gallery ===== */
+    main{
+      padding: 0 1rem 3rem;
+    }
+
+    .gallery-section{
+      margin: 0 auto;
+      max-width: 1200px;
+    }
+
+    .grid{
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px){
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 1024px){
+      .grid{ grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .card{
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+      cursor: pointer;
+    }
+
+    .card.hidden{
+      display: none;
+    }
+
+    .card:hover{
+      transform: translateY(-2px);
+      background: var(--cardHover);
+      border-color: rgba(255,255,255,.12);
+    }
+
+    .card figure{
+      margin: 0;
+    }
+
+    .card img{
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #22252b;
+    }
+
+    figcaption{
+      padding: 0.85rem 1rem 1.1rem;
+    }
+
+    figcaption h3{
+      margin: 0 0 .25rem 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    figcaption p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* ===== Modal ===== */
+    .modal-overlay{
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active{
+      display: flex;
+    }
+
+    .modal{
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn{
+      from{
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to{
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-close{
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 1.5rem;
+      line-height: 1;
+      transition: all .2s ease;
+      z-index: 10;
+    }
+
+    .modal-close:hover{
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255,255,255,.2);
+    }
+
+    .modal-image{
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      background: #22252b;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .modal-content{
+      padding: 2rem;
+    }
+
+    .modal-header{
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title{
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      color: #fff;
+    }
+
+    .modal-year{
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .modal-description{
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin: 0 0 2rem 0;
+    }
+
+    .modal-actions{
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn{
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .2s ease;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary{
+      background: var(--accent);
+      color: #0b0b0c;
+      border: 1px solid var(--accent);
+    }
+
+    .btn-primary:hover{
+      background: #9bc4ff;
+      border-color: #9bc4ff;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary{
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.2);
+    }
+
+    .btn-secondary:hover{
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.3);
+    }
+
+    /* ===== Footer ===== */
+    .site-footer{
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding: 1.25rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    /* Disable text selection and text cursor globally */
+    body, html, * {
+      user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      cursor: default;
+    }
+
+    .filter-btn, .card, .modal-close, .btn {
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <header class="hero">
     <div class="name">Paula Dejus</div>
-    <p class="tagline">Unity Developer / Interactive Media Artist<br>Creating Virtual Reality Art in Unity since 2016</p>
+    <p class="tagline">Interactive Media Artist & Unity Developer<br>Creating immersive digital experiences since 2016</p>
   </header>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="unity">Unity</button>
+    <button class="filter-btn" data-filter="interactive-art">Interactive Art</button>
+    <button class="filter-btn" data-filter="p5js">P5.js</button>
+    <button class="filter-btn" data-filter="video">Video</button>
+    <button class="filter-btn" data-filter="illustration">Illustration</button>
+  </div>
 
   <main>
     <section class="gallery-section">
-      <div class="grid">
-        <!-- WebGL piece as first/only artwork -->
-        <a class="card" href="webgl/index.html">
-          <figure>
-            <img src="webgl/imagination.jpg" alt="WebGL artwork preview" loading="lazy">
-            <figcaption>
-              <h3>Imagination</h3>
-              <p>Interactive Unity/WebGL artwork</p>
-            </figcaption>
-          </figure>
-        </a>
+      <div class="grid" id="gallery">
+        <!-- Projects will be inserted here by JavaScript -->
       </div>
     </section>
   </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">×</button>
+      <img class="modal-image" id="modalImage" src="" alt="">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modalTitle"></h2>
+          <p class="modal-year" id="modalYear"></p>
+        </div>
+        <p class="modal-description" id="modalDescription"></p>
+        <div class="modal-actions" id="modalActions">
+          <!-- Buttons will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <p>© <span id="year"></span> Paula Dejus</p>
   </footer>
 
   <script>
-    // Update copyright year automatically
+    // Your portfolio data - newest first
+    const projects = [
+      {
+        title: "Imagination",
+        year: 2024,
+        description: "An interactive exploration of memory and digital space. This WebGL experience invites viewers to navigate through fragmented landscapes where reality and imagination blur together.",
+        image: "https://imgur.com/KXJqLhT.jpg",
+        link: "webgl/index.html",
+        tags: ["unity", "interactive-art"],
+        linkText: "Experience" // Optional: custom button text
+      },
+      // Add more projects here following this format:
+      // {
+      //   title: "Project Name",
+      //   year: 2023,
+      //   description: "Longer description of your work. This appears in the modal when someone clicks on it.",
+      //   image: "path/to/image.jpg",
+      //   link: "path/to/project.html", // or video link, etc
+      //   tags: ["unity", "video"],
+      //   linkText: "Watch" // Optional: "Play", "Watch", "View", etc
+      // },
+    ];
+
+    let currentFilter = 'all';
+
+    // Render gallery
+    function renderGallery(filter = 'all') {
+      currentFilter = filter;
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = '';
+      
+      projects.forEach((project, index) => {
+        const shouldShow = filter === 'all' || project.tags.includes(filter);
+        
+        const card = document.createElement('div');
+        card.className = `card${shouldShow ? '' : ' hidden'}`;
+        card.onclick = () => openModal(index);
+        
+        card.innerHTML = `
+          <figure>
+            <img src="${project.image}" alt="${project.title}" loading="lazy">
+            <figcaption>
+              <h3>${project.title}</h3>
+              <p>${project.year}</p>
+            </figcaption>
+          </figure>
+        `;
+        
+        gallery.appendChild(card);
+      });
+    }
+
+    // Open modal
+    function openModal(index) {
+      const project = projects[index];
+      const modal = document.getElementById('modal');
+      
+      document.getElementById('modalImage').src = project.image;
+      document.getElementById('modalImage').alt = project.title;
+      document.getElementById('modalTitle').textContent = project.title;
+      document.getElementById('modalYear').textContent = project.year;
+      document.getElementById('modalDescription').textContent = project.description;
+      
+      // Set up action buttons
+      const actions = document.getElementById('modalActions');
+      actions.innerHTML = '';
+      
+      if (project.link) {
+        const btn = document.createElement('a');
+        btn.className = 'btn btn-primary';
+        btn.href = project.link;
+        btn.target = '_blank';
+        btn.textContent = project.linkText || 'View Project';
+        actions.appendChild(btn);
+      }
+      
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Close modal
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('modalClose').onclick = closeModal;
+    document.getElementById('modal').onclick = (e) => {
+      if (e.target.id === 'modal') closeModal();
+    };
+
+    // ESC key to close modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Filter functionality
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderGallery(btn.dataset.filter);
+      });
+    });
+
+    // Initial render
+    renderGallery();
+    
+    // Update copyright year
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
