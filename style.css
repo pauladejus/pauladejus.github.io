@@ -17,7 +17,7 @@ html, body{
 }
 
 body{
-  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Roboto', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
@@ -41,6 +41,7 @@ body{
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
+  font-family: 'Roboto Mono', monospace;  /* <-- PIEVIENO ŠO! */
 }
 
 
@@ -72,7 +73,7 @@ main{
 }
 
 @media (min-width: 1024px){
-  .grid{ grid-template-columns: repeat(3, 1fr); }
+  .grid{ grid-template-columns: repeat(2, 1fr); }
 }
 
 .card{

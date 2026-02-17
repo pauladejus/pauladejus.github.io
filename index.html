@@ -7,7 +7,7 @@
   <meta name="description" content="Unity Developer & Interactive Media Artist. Creating Virtual Reality Art in Unity since 2016.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700;800&family=Roboto:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     /* ===== Base ===== */
     :root{
@@ -28,7 +28,7 @@
     }
 
     body{
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Roboto', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.5;
@@ -52,12 +52,13 @@
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
+      font-family: 'Roboto Mono', monospace;
     }
 
     .tagline{
       margin-top: .25rem;
       color: var(--muted);
-      font-weight: 400;
+      garums: 400;
       font-size: clamp(1rem, 2.2vw, 1.25rem);
     }
 
@@ -66,7 +67,7 @@
       max-width: 1200px;
       margin: 0 auto 2rem;
       padding: 0 1rem;
-      display: flex;
+      display: none; /* ===== flex   to show filter===== */
       gap: 0.75rem;
       flex-wrap: wrap;
       justify-content: center;
@@ -117,12 +118,13 @@
     }
 
     @media (min-width: 1024px){
-      .grid{ grid-template-columns: repeat(3, 1fr); }
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
 
-      @media (max-width: 640px){
-  .tagline{
-    font-size: 0.9rem;
-  }
+    @media (max-width: 640px){
+      .tagline{
+        font-size: 0.9rem;
+      }
     }
 
     .card{
@@ -307,8 +309,8 @@
     }
 
     .btn-primary:hover{
-      background: #9bc4ff;
-      border-color: #9bc4ff;
+      background: #b857ef;
+      border-color: #b857ef;
       transform: translateY(-1px);
     }
 
@@ -391,27 +393,47 @@
   </footer>
 
   <script>
-    // Your portfolio data - newest first
+    // ========================================
+    // TAVI PROJEKTI - Pievieno aprakstus un linkus!
+    // ========================================
     const projects = [
-      {
+      
+    {
+        title: "Cat Love",
+        year: 2024,
+        description: "A mini-game exploring lessons of love through playful interaction. Players navigate a colorful environment, meet cat residents, and collect 10 love lessons along the way. Designed with simple mechanics for a young audience, though accessible to all ages. Originally created in seven days for the Love Bytes VR Jam, where it was awarded third place.", // <-- RAKSTI ŠEIT
+        image: "Art/CatLove/CatLove.jpg",
+        link: "https://paulaplay.itch.io/catlove-webgl", // <-- IEVIETO LINKU ŠEIT
+        tags: ["unity"], // Maini tagus pēc vajadzības
+        linkText: "Experience"
+      },
+    {
         title: "Imagination",
         year: 2022,
-        description: "An interactive exploration of memory and digital space. This WebGL experience invites viewers to navigate through fragmented landscapes where reality and imagination blur together.",
-        image: "webgl/imagination.jpg",
-        link: "webgl/index.html",
-        tags: ["unity", "interactive-art"],
-        linkText: "Experience" // Optional: custom button text
+        description: "A digital exhibition built from hand-drawn illustrations, developed as part of Paula's Master thesis Immersive Web Art and the Aesthetics of Curation in Web3. Analog drawings inspired by nature were scanned, digitally processed, and transformed into cascades and particle systems within Unity. The environment is inhabited by cat characters drawn from the streets of Liepaja, their purring spatially represented with 3D audio. It is a linear sensory journey exploring the intersection of analog craft and digital immersion.", // <-- RAKSTI ŠEIT
+        image: "Art/Imagination/Imagination.jpg",
+        link: "https://paulaplay.itch.io/imagination", // <-- IEVIETO LINKU ŠEIT (piemēram: "imagination/index.html")
+        tags: ["unity"],
+        linkText: "Experience"
       },
-      // Add more projects here following this format:
-      // {
-      //   title: "Project Name",
-      //   year: 2023,
-      //   description: "Longer description of your work. This appears in the modal when someone clicks on it.",
-      //   image: "path/to/image.jpg",
-      //   link: "path/to/project.html", // or video link, etc
-      //   tags: ["unity", "video"],
-      //   linkText: "Watch" // Optional: "Play", "Watch", "View", etc
-      // },
+      {
+        title: "Digital Trail",
+        year: 2021,
+        description: "A digital exhibition built from 3D scans of Latvian nature, captured using LiDAR technology. The experience features Daudas waterfall, a summer camping tent, and a walking corgi. The environment is layered with a forest backdrop, firefly particle effects, and spatial 3D audio to create atmosphere. Visitors can traverse the extended dune trail—an experiment in the limits of continuous scanning—and encounter the artist at the digital trail's end.", // <-- RAKSTI ŠEIT
+        image: "Art/DigitalTrail/DigitalTrail.jpg",
+        link: "https://paulaplay.itch.io/digital-trail", // <-- IEVIETO LINKU ŠEIT
+        tags: ["unity"], // Maini tagus pēc vajadzības
+        linkText: "Experience"
+      },
+      {
+        title: "Solution",
+        year: 2018,
+        description: "A dystopian visualization of a future solution to air pollution. The viewer stands inside a dome inhabited by colorful, genetically modified trees that produce oxygen for the surrounding city. Beyond the dome, the environment is lifeless—natural trees have died from extreme pollution, leaving these engineered specimens as the only means of survival. Originally created for VR in 2018, remastered in 2026.", // <-- RAKSTI ŠEIT
+        image: "Art/Solution/Solution.jpg",
+        link: "https://paulaplay.itch.io/solution", // <-- IEVIETO LINKU ŠEIT
+        tags: ["unity"], // Maini tagus pēc vajadzības
+        linkText: "Experience"
+      }
     ];
 
     let currentFilter = 'all';
@@ -463,7 +485,7 @@
         btn.className = 'btn btn-primary';
         btn.href = project.link;
         btn.target = '_blank';
-        btn.textContent = project.linkText || 'View Project';
+        btn.textContent = project.linkText || 'Experience';
         actions.appendChild(btn);
       }
       
