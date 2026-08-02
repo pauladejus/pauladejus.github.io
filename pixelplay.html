@@ -45,6 +45,19 @@
     padding:4px 6px; border-radius:5px; outline:none; cursor:pointer;
   }
   .spacer{flex:1;}
+  #mbar{
+    display:none; align-items:stretch; gap:3px; padding:4px 6px;
+    background:var(--panel2); border-bottom:1px solid var(--line);
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  .mbtn{
+    flex:0 0 auto; min-width:48px; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel); color:var(--text); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:1px; padding:5px 4px;
+  }
+  .mbtn .mi{font-size:16px; line-height:1.1;}
+  .mbtn .ml{font-size:9px; color:var(--dim); letter-spacing:.3px;}
+  .mbtn.active{border-color:#ffffff; background:var(--line);}
   main{flex:1; display:flex; min-height:0;}
   /* ---------- left panel ---------- */
   #tools{
@@ -166,29 +179,30 @@
     #side{flex-basis:240px;}
     #wrap{height:min(100%, 100vw - 440px);}
   }
-  /* ---------- phone layout: canvas on top, panels stack below ---------- */
+  /* ---------- phone layout: icon bar + dropdowns, canvas front and center ---------- */
   @media (max-width:760px){
-    body{overflow:auto; height:auto; min-height:100%;}
-    main{flex-direction:column; overflow:visible;}
-    header{flex-wrap:wrap; gap:8px; position:sticky; top:0; z-index:20;}
-    #stage{order:0; padding:10px; flex:0 0 auto;}
-    #wrap{height:auto; width:min(94vw, 62vh);}
-    #tools{
-      order:1; flex:0 0 auto; flex-direction:row; flex-wrap:wrap; gap:10px;
-      border-right:none; border-top:1px solid var(--line); padding:10px;
-      overflow:visible;
+    body{overflow-x:hidden; overflow-y:auto; height:auto; min-height:100%;}
+    header{flex-wrap:wrap; gap:6px; padding:6px 10px;}
+    h1{font-size:16px;}
+    #mbar{display:flex; position:sticky; top:0; z-index:30;}
+    main{display:flex; flex-direction:column; overflow:visible;}
+    #tools, #side{display:contents;}
+    #tools .group, #side > .sec{display:none;}
+    #stage{order:0; flex:0 0 auto; padding:8px; justify-content:center;}
+    #wrap{width:min(96vw, 66vh); height:auto;}
+    #g-tile{display:flex; order:1; margin:6px 12px 0;}
+    #s-export{display:flex; order:2; margin:6px 12px 0;}
+    #s-remix{display:flex; order:3; margin:6px 12px 18px;}
+    .mopen{
+      display:flex !important; position:fixed; left:8px; right:8px; top:58px;
+      z-index:40; background:var(--panel); border:1px solid var(--line);
+      border-radius:12px; padding:14px; max-height:62vh; overflow-y:auto;
+      box-shadow:0 18px 50px rgba(0,0,0,.65);
     }
-    #tools .group{flex:1 1 44%; min-width:150px; margin-bottom:0;}
-    #side{
-      order:2; flex:0 0 auto; border-left:none; border-top:1px solid var(--line);
-      flex-direction:row; flex-wrap:wrap; gap:12px; padding:10px;
-      overflow:visible;
-    }
-    #side > .sec{flex:1 1 44%; min-width:170px;}
-    .tbtn{padding:10px 6px; font-size:13px;}
-    .act, .toggle{padding:10px 8px; font-size:13px;}
-    select{min-height:40px; font-size:16px;}
-    input[type=color]{width:46px; height:40px;}
+    .tbtn{padding:11px 6px; font-size:13px;}
+    .act, .toggle{padding:11px 8px; font-size:13px;}
+    select{min-height:42px; font-size:16px;}
+    input[type=color]{width:48px; height:42px;}
     #tilePrev{width:150px; height:150px;}
     #layerList{max-height:150px;}
     #remixGrid, #galleryGrid{grid-template-columns:repeat(auto-fill, minmax(130px,1fr));}
@@ -221,9 +235,24 @@
   <button class="act" id="galleryBtn">Projects</button>
 </header>
 
+<div id="mbar">
+  <button class="mbtn" data-panel="g-tools"><span class="mi">✏️</span><span class="ml">Tools</span></button>
+  <button class="mbtn" data-panel="g-shapes"><span class="mi">🔷</span><span class="ml">Shapes</span></button>
+  <button class="mbtn" data-panel="g-stamps"><span class="mi">🐾</span><span class="ml">Stamps</span></button>
+  <button class="mbtn" data-panel="g-patterns"><span class="mi">✳️</span><span class="ml">Pattern</span></button>
+  <button class="mbtn" data-panel="g-dither"><span class="mi">▦</span><span class="ml">Dither</span></button>
+  <button class="mbtn" data-panel="g-effects"><span class="mi">🌀</span><span class="ml">Effects</span></button>
+  <button class="mbtn" data-panel="s-layers"><span class="mi">▤</span><span class="ml">Layers</span></button>
+  <button class="mbtn" data-panel="s-mirror"><span class="mi">⇄</span><span class="ml">Mirror</span></button>
+  <button class="mbtn" data-panel="s-brush"><span class="mi">🖌️</span><span class="ml">Brush</span></button>
+  <button class="mbtn" data-panel="s-color"><span class="mi">🎨</span><span class="ml">Color</span></button>
+  <button class="mbtn" id="mUndo"><span class="mi">↶</span><span class="ml">Undo</span></button>
+  <button class="mbtn" id="mRedo"><span class="mi">↷</span><span class="ml">Redo</span></button>
+</div>
+
 <main>
   <nav id="tools">
-    <div class="group" style="--sc:#FF00FF; --sct:#FF5CFF;">
+    <div class="group" id="g-tools" style="--sc:#FF00FF; --sct:#FF5CFF;">
       <h2>TOOLS</h2>
       <div class="tgrid">
         <button class="tbtn active" data-tool="pencil" title="Shortcut: B">Pencil</button>
@@ -233,7 +262,7 @@
         <button class="tbtn" data-tool="picker" title="Shortcut: I">Eyedropper</button>
       </div>
     </div>
-    <div class="group" style="--sc:#7F00FF; --ink:#ffffff; --sct:#B57BFF;">
+    <div class="group" id="g-shapes" style="--sc:#7F00FF; --ink:#ffffff; --sct:#B57BFF;">
       <h2>SHAPES</h2>
       <div class="g2">
         <button class="toggle on" data-sfill="outline">Outline</button>
@@ -248,7 +277,7 @@
         <option value="diamond">Diamond</option>
       </select>
     </div>
-    <div class="group" style="--sc:#4000FF; --ink:#ffffff; --sct:#9E8CFF;">
+    <div class="group" id="g-stamps" style="--sc:#4000FF; --ink:#ffffff; --sct:#9E8CFF;">
       <h2>STAMPS</h2>
       <div class="g2">
         <button class="toggle" data-tfill="outline">Outline</button>
@@ -273,7 +302,7 @@
         <option value="ghost">Ghost</option>
       </select>
     </div>
-    <div class="group" style="--sc:#0000FF; --ink:#ffffff; --sct:#8F9BFF;">
+    <div class="group" id="g-patterns" style="--sc:#0000FF; --ink:#ffffff; --sct:#8F9BFF;">
       <h2>PATTERNS</h2>
       <div class="tgrid">
         <button class="tbtn" data-tool="fractal" title="Shortcut: F">Fractal</button>
@@ -282,14 +311,14 @@
         <button class="tbtn" data-tool="spiral"  title="Shortcut: P">Spiral</button>
       </div>
     </div>
-    <div class="group" style="--sc:#007FFF; --sct:#4DA6FF;">
+    <div class="group" id="g-dither" style="--sc:#007FFF; --sct:#4DA6FF;">
       <h2>DITHER</h2>
       <div class="g2">
         <button class="toggle on" data-dmode="linear" title="Shortcut: Q">Linear</button>
         <button class="toggle" data-dmode="radial" title="Shortcut: Q">Radial</button>
       </div>
     </div>
-    <div class="group" style="--sc:#00BFFF;">
+    <div class="group" id="g-effects" style="--sc:#00BFFF;">
       <h2>EFFECTS</h2>
       <div class="tgrid">
         <button class="tbtn" data-tool="swirl"   title="Shortcut: W">Swirl</button>
@@ -300,7 +329,7 @@
         <button class="tbtn" data-tool="wave"    title="Shortcut: V">Wave</button>
       </div>
     </div>
-    <div class="group" style="--sc:#00FFFF;">
+    <div class="group" id="g-tile" style="--sc:#00FFFF;">
       <div class="row">
         <h2 style="flex:1;">TILE PREVIEW</h2>
         <select id="tileSize">
@@ -327,7 +356,7 @@
   </section>
 
   <aside id="side">
-    <div class="sec" style="--sc:#00FF7F;">
+    <div class="sec" id="s-layers" style="--sc:#00FF7F;">
       <h2>LAYERS</h2>
       <div id="layerList"></div>
       <div class="g3">
@@ -341,7 +370,7 @@
       </div>
     </div>
 
-    <div class="sec" style="--sc:#00FF00;">
+    <div class="sec" id="s-mirror" style="--sc:#00FF00;">
       <h2>MIRROR</h2>
       <div class="g2">
         <button class="toggle" id="mirX">Mirror X</button>
@@ -349,7 +378,7 @@
       </div>
     </div>
 
-    <div class="sec" style="--sc:#7FFF00;">
+    <div class="sec" id="s-brush" style="--sc:#7FFF00;">
       <h2>BRUSH</h2>
       <div class="row">
         <label class="tag">Size</label>
@@ -363,7 +392,7 @@
       </div>
     </div>
 
-    <div class="sec" style="--sc:#FFFF00;">
+    <div class="sec" id="s-color" style="--sc:#FFFF00;">
       <h2>COLOR</h2>
       <div class="row">
         <input type="color" id="color" value="#ff00ff">
@@ -400,7 +429,7 @@
       </div>
     </div>
 
-    <div class="sec" style="--sc:#FF7F00; --sct:#FF9933;">
+    <div class="sec" id="s-export" style="--sc:#FF7F00; --sct:#FF9933;">
       <h2>EXPORT</h2>
       <div class="row">
         <select id="exportScale">
@@ -412,9 +441,10 @@
         </select>
         <button class="act primary" id="exportBtn" style="flex:1;">Download PNG</button>
       </div>
+      <button class="act" id="exportLayersBtn">Export All Layers</button>
     </div>
 
-    <div class="sec" style="--sc:#FF0000; --sct:#FF6666;">
+    <div class="sec" id="s-remix" style="--sc:#FF0000; --sct:#FF6666;">
       <h2>REMIX</h2>
       <div class="row">
         <select id="remixCount">
@@ -1400,6 +1430,7 @@ function effectLoop(){
 ui.addEventListener('contextmenu', e => e.preventDefault());
 ui.addEventListener('pointerdown', e => {
   e.preventDefault();
+  if(typeof closeMobilePanels === 'function') closeMobilePanels();
   ui.setPointerCapture(e.pointerId);
   const c = cellFromEvent(e);
   S.cell = c; S.lastCell = c;
@@ -2005,6 +2036,25 @@ document.getElementById('projNewBtn').addEventListener('click', () => {
   document.getElementById('galleryModal').classList.remove('open');
 });
 
+/* ============ mobile icon bar ============ */
+function closeMobilePanels(){
+  document.querySelectorAll('.mopen').forEach(x => x.classList.remove('mopen'));
+  document.querySelectorAll('#mbar .mbtn').forEach(x => x.classList.remove('active'));
+}
+document.querySelectorAll('#mbar [data-panel]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const el = document.getElementById(btn.dataset.panel);
+    const wasOpen = el.classList.contains('mopen');
+    closeMobilePanels();
+    if(!wasOpen){
+      el.classList.add('mopen');
+      btn.classList.add('active');
+    }
+  });
+});
+document.getElementById('mUndo').addEventListener('click', () => { closeMobilePanels(); undo(); });
+document.getElementById('mRedo').addEventListener('click', () => { closeMobilePanels(); redo(); });
+
 /* ============ UI wiring ============ */
 function setTool(t){
   S.tool = t;
@@ -2103,6 +2153,12 @@ document.getElementById('redoBtn').addEventListener('click', redo);
 document.getElementById('exportBtn').addEventListener('click', () => {
   composite();
   downloadArr(comp, 'art');
+});
+document.getElementById('exportLayersBtn').addEventListener('click', () => {
+  layers.forEach((l, i) => {
+    const tag = 'layer' + (i+1) + '_' + l.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+    setTimeout(() => downloadArr(l.pix, tag), i*400);
+  });
 });
 document.getElementById('remixBtn').addEventListener('click', makeRemixes);
 document.getElementById('remixAgain').addEventListener('click', makeRemixes);
