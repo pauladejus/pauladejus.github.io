@@ -45,6 +45,8 @@
     padding:4px 6px; border-radius:5px; outline:none; cursor:pointer;
   }
   .spacer{flex:1;}
+  #topbars{display:none;}
+  #bbar{display:none;}
   #mbar{
     display:none; align-items:stretch; gap:3px; padding:4px 6px;
     background:var(--panel2); border-bottom:1px solid var(--line);
@@ -182,19 +184,67 @@
   /* ---------- phone layout: icon bar + dropdowns, canvas front and center ---------- */
   @media (max-width:760px){
     body{overflow-x:hidden; overflow-y:auto; height:auto; min-height:100%;}
-    header{flex-wrap:wrap; gap:6px; padding:6px 10px;}
-    h1{font-size:16px;}
-    #mbar{display:flex; position:sticky; top:0; z-index:30;}
+    header{flex-wrap:wrap; gap:5px; padding:4px 8px; justify-content:center;}
+    #titleBlock{flex-basis:100%; text-align:center;}
+    #subtitle{display:none;}
+    header .spacer{display:none;}
+    #galleryBtn{order:1; padding:6px 12px;}
+    header .bar-group{order:2;}
+    #gridSize{font-size:13px; min-height:30px; padding:2px 4px;}
+    h1{font-size:15px;}
+    #topbars{
+      display:block; position:sticky; top:0; z-index:30;
+      background:var(--panel2); border-bottom:1px solid var(--line);
+    }
+    #mtop{display:flex; flex-direction:column; gap:2px; padding:4px 8px 2px;}
+    #mtop h2{display:none;}
+    #mtopRow{display:flex; align-items:center; gap:8px;}
+    #mtopRow .sec{flex:1; display:flex; flex-direction:row; gap:8px; min-width:0;}
+    #mtopRow .sec .row{flex:1; min-width:0; gap:4px; flex-wrap:nowrap;}
+    #mtopRow .tag{font-size:9px;}
+    #mtopRow .val{min-width:18px; font-size:12px;}
+    #mtopBtns{display:flex; gap:5px;}
+    #mtopBtns .act{font-size:18px; line-height:1; padding:7px 11px;}
+    #mtopColor .sec{display:flex; flex-direction:column; gap:4px; padding-top:0;}
+    #mtopColor .tag{display:none;}
+    #mtop #palManage{display:none;}
+    #mtop .pal{gap:2px;}
+    #mtop .sw{aspect-ratio:auto; height:22px; border-radius:2px;}
+    #mtop input[type=color]{width:34px; height:30px;}
+    #mtop select{min-height:30px; font-size:13px; padding:2px 4px;}
+    #mtop .toggle{padding:4px 6px; font-size:11.5px;}
+    #mtop #palSelect{min-width:60px;}
+    #mtop .sw{height:20px;}
+    #mtop input[type=color]{width:32px; height:28px;}
+    #mbar{
+      display:flex; flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start;
+      background:transparent; border-bottom:none; padding:2px 4px 5px;
+    }
+    #mbar .mbtn:first-child{margin-left:auto;}
+    #mbar .mbtn:last-child{margin-right:auto;}
+    .mbtn{min-width:40px; padding:3px 3px;}
+    .mbtn .mi{font-size:14px;}
+    .mbtn .ml{font-size:8px;}
     main{display:flex; flex-direction:column; overflow:visible;}
     #tools, #side{display:contents;}
     #tools .group, #side > .sec{display:none;}
-    #stage{order:0; flex:0 0 auto; padding:8px; justify-content:center;}
+    #stage{order:0; flex:0 0 auto; padding:6px; justify-content:center;}
     #wrap{width:min(96vw, 66vh); height:auto;}
-    #g-tile{display:flex; order:1; margin:6px 12px 0;}
-    #s-export{display:flex; order:2; margin:6px 12px 0;}
-    #s-remix{display:flex; order:3; margin:6px 12px 18px;}
+    #bbar{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:35;
+      justify-content:center; gap:14px; padding:4px 8px calc(4px + env(safe-area-inset-bottom));
+      background:var(--panel2); border-top:1px solid var(--line);
+    }
+    main{padding-bottom:64px;}
+    #tilePrev{align-self:center;}
+    #g-tile.mopen{
+      left:50%; right:auto; bottom:auto; top:16vh; transform:translateX(-50%);
+      width:min(72vw, 330px);
+    }
+    #g-tile.mopen #tilePrev{width:100%; height:auto; aspect-ratio:1;}
+    #undoBtn, #redoBtn{display:none;}
     .mopen{
-      display:flex !important; position:fixed; left:8px; right:8px; top:58px;
+      display:flex !important; position:fixed; left:8px; right:8px; bottom:64px; top:auto;
       z-index:40; background:var(--panel); border:1px solid var(--line);
       border-radius:12px; padding:14px; max-height:62vh; overflow-y:auto;
       box-shadow:0 18px 50px rgba(0,0,0,.65);
@@ -212,42 +262,59 @@
 <body>
 
 <header>
-  <div>
+  <div id="titleBlock">
     <h1><span style="color:#FF4040">P</span><span style="color:#FF8C1A">I</span><span style="color:#FFE81A">X</span><span style="color:#33FF33">E</span><span style="color:#33E0FF">L</span><span style="color:#4D8CFF">P</span><span style="color:#8C66FF">L</span><span style="color:#C44DFF">A</span><span style="color:#FF4DD8">Y</span> <span style="color:var(--text);">by Paula</span></h1>
-    <div style="font-size:11px; color:var(--text); opacity:.75; letter-spacing:1px; margin-top:1px;">pixel texture creation tool</div>
+    <div id="subtitle" style="font-size:11px; color:var(--text); opacity:.75; letter-spacing:1px; margin-top:1px;">pixel texture creation tool</div>
   </div>
   <div class="bar-group">
-    <label class="tag" for="gridSize">Canvas</label>
     <select id="gridSize">
       <option value="8">8 × 8</option>
       <option value="16">16 × 16</option>
-      <option value="32" selected>32 × 32</option>
+      <option value="32">32 × 32</option>
       <option value="48">48 × 48</option>
       <option value="64">64 × 64</option>
       <option value="96">96 × 96</option>
-      <option value="128">128 × 128</option>
+      <option value="128" selected>128 × 128</option>
+      <option value="160">160 × 160</option>
+      <option value="192">192 × 192</option>
+      <option value="256">256 × 256</option>
+      <option value="384">384 × 384</option>
+      <option value="512">512 × 512</option>
+      <option value="custom">Custom…</option>
     </select>
   </div>
-  <button class="toggle on" id="gridToggle">Show Grid</button>
   <div class="spacer"></div>
   <button class="act" id="undoBtn" title="Ctrl+Z">Undo</button>
   <button class="act" id="redoBtn" title="Ctrl+Shift+Z">Redo</button>
-  <button class="act" id="galleryBtn">Projects</button>
+  <button class="act primary" id="galleryBtn">Projects</button>
 </header>
 
+<div id="topbars">
+<div id="mtop">
+  <div id="mtopRow">
+    <div id="mtopBtns">
+      <button class="act" id="mUndo" title="Undo">↺</button>
+      <button class="act" id="mRedo" title="Redo">↻</button>
+    </div>
+  </div>
+  <div id="mtopColor"></div>
+</div>
 <div id="mbar">
-  <button class="mbtn" data-panel="g-tools"><span class="mi">✏️</span><span class="ml">Tools</span></button>
-  <button class="mbtn" data-panel="g-shapes"><span class="mi">🔷</span><span class="ml">Shapes</span></button>
-  <button class="mbtn" data-panel="g-stamps"><span class="mi">🐾</span><span class="ml">Stamps</span></button>
-  <button class="mbtn" data-panel="g-patterns"><span class="mi">✳️</span><span class="ml">Pattern</span></button>
-  <button class="mbtn" data-panel="g-dither"><span class="mi">▦</span><span class="ml">Dither</span></button>
-  <button class="mbtn" data-panel="g-effects"><span class="mi">🌀</span><span class="ml">Effects</span></button>
-  <button class="mbtn" data-panel="s-layers"><span class="mi">▤</span><span class="ml">Layers</span></button>
-  <button class="mbtn" data-panel="s-mirror"><span class="mi">⇄</span><span class="ml">Mirror</span></button>
-  <button class="mbtn" data-panel="s-brush"><span class="mi">🖌️</span><span class="ml">Brush</span></button>
-  <button class="mbtn" data-panel="s-color"><span class="mi">🎨</span><span class="ml">Color</span></button>
-  <button class="mbtn" id="mUndo"><span class="mi">↶</span><span class="ml">Undo</span></button>
-  <button class="mbtn" id="mRedo"><span class="mi">↷</span><span class="ml">Redo</span></button>
+  <button class="mbtn" data-panel="g-tools"><span class="mi">🖍️</span><span class="ml">Tools</span></button>
+  <button class="mbtn" data-panel="g-shapes"><span class="mi">💠</span><span class="ml">Shapes</span></button>
+  <button class="mbtn" data-panel="g-stamps"><span class="mi">👾</span><span class="ml">Stamps</span></button>
+  <button class="mbtn" data-panel="g-patterns"><span class="mi">🌿</span><span class="ml">Pattern</span></button>
+  <button class="mbtn" data-panel="g-dither"><span class="mi">🌗</span><span class="ml">Dither</span></button>
+  <button class="mbtn" data-panel="g-effects"><span class="mi">✨</span><span class="ml">Effects</span></button>
+  <button class="mbtn" data-panel="s-layers"><span class="mi">🗂️</span><span class="ml">Layers</span></button>
+  <button class="mbtn" data-panel="s-mirror"><span class="mi">🪞</span><span class="ml">Mirror</span></button>
+</div>
+</div>
+
+<div id="bbar">
+  <button class="mbtn" data-panel="g-tile"><span class="mi">🧱</span><span class="ml">Tile</span></button>
+  <button class="mbtn" data-panel="s-export"><span class="mi">📤</span><span class="ml">Export</span></button>
+  <button class="mbtn" data-panel="s-remix"><span class="mi">🎲</span><span class="ml">Remix</span></button>
 </div>
 
 <main>
@@ -261,13 +328,10 @@
         <button class="tbtn" data-tool="bucket" title="Shortcut: G">Bucket Fill</button>
         <button class="tbtn" data-tool="picker" title="Shortcut: I">Eyedropper</button>
       </div>
+      <button class="toggle on" id="gridToggle">Show Grid</button>
     </div>
     <div class="group" id="g-shapes" style="--sc:#7F00FF; --ink:#ffffff; --sct:#B57BFF;">
       <h2>SHAPES</h2>
-      <div class="g2">
-        <button class="toggle on" data-sfill="outline">Outline</button>
-        <button class="toggle" data-sfill="solid">Solid</button>
-      </div>
       <select id="shapeSelect">
         <option value="line">Line</option>
         <option value="circle" selected>Circle</option>
@@ -279,10 +343,6 @@
     </div>
     <div class="group" id="g-stamps" style="--sc:#4000FF; --ink:#ffffff; --sct:#9E8CFF;">
       <h2>STAMPS</h2>
-      <div class="g2">
-        <button class="toggle" data-tfill="outline">Outline</button>
-        <button class="toggle on" data-tfill="solid">Solid</button>
-      </div>
       <select id="stampSelect">
         <option value="human" selected>Human</option>
         <option value="dog">Dog</option>
@@ -399,6 +459,8 @@
         <button class="toggle on" data-cmode="solid">Solid</button>
         <button class="toggle" data-cmode="hue">Hue</button>
         <button class="toggle" data-cmode="gradient">Gradient</button>
+        <button class="toggle" id="outlineToggle" title="Draw shapes &amp; stamps as outlines">Outline</button>
+        <select id="palSelect" style="flex:1; min-width:70px;"></select>
       </div>
       <div class="row" id="cycleRow" style="display:none;">
         <label class="tag">Cycle</label>
@@ -417,12 +479,8 @@
           <option value="">Load gradient…</option>
         </select>
       </div>
-      <div class="row">
-        <label class="tag">Palette</label>
-        <select id="palSelect" style="flex:1;"></select>
-      </div>
       <div class="pal" id="palette"></div>
-      <div class="g3">
+      <div class="g3" id="palManage">
         <button class="act" id="palNew">New</button>
         <button class="act" id="palAddColor">Add Color</button>
         <button class="act" id="palSave">Save</button>
@@ -506,9 +564,8 @@ const S = {
   cell: {x:-1, y:-1},
   lastCell: null,
   shape: 'circle',
-  shapeFill: 'outline',
+  fillOutline: false,
   stampShape: 'human',
-  stampFill: 'solid',
   erasing: false,
   tileN: 3,
   ditherMode: 'linear',
@@ -1398,11 +1455,11 @@ function placeShape(sx,sy,ex,ey){
   }
   const ax=Math.min(sx,x1), bx=Math.max(sx,x1), ay=Math.min(sy,y1), by=Math.max(sy,y1);
   const w=bx-ax+1, hh=by-ay+1;
-  paintMask(buildShapeMask(S.shape, w, hh), w, hh, ax, ay, S.shapeFill==='outline');
+  paintMask(buildShapeMask(S.shape, w, hh), w, hh, ax, ay, S.fillOutline);
 }
 function stampClickAt(cx,cy){
   const t = 2*S.size + 1;
-  paintMask(buildShapeMask(S.stampShape, t, t), t, t, cx-S.size, cy-S.size, S.stampFill==='outline');
+  paintMask(buildShapeMask(S.stampShape, t, t), t, t, cx-S.size, cy-S.size, S.fillOutline);
 }
 function gditherApply(sx,sy,ex,ey){
   const arr = A();
@@ -1430,7 +1487,7 @@ function effectLoop(){
 ui.addEventListener('contextmenu', e => e.preventDefault());
 ui.addEventListener('pointerdown', e => {
   e.preventDefault();
-  if(typeof closeMobilePanels === 'function') closeMobilePanels();
+  if(typeof closeMobilePanels === 'function' && closeMobilePanels()) return;
   ui.setPointerCapture(e.pointerId);
   const c = cellFromEvent(e);
   S.cell = c; S.lastCell = c;
@@ -1524,7 +1581,9 @@ const PICO8 = ['#000000','#1d2b53','#7e2553','#008751','#ab5236','#5f574f','#c2c
 const EARTH = ['#3b2f2f','#5d4037','#795548','#8d6e63','#a1887f','#b08d57','#c2b280','#d2b48c',
                '#556b2f','#6b8e23','#8f9779','#4e342e','#7c5c45','#9c7a5b','#deb887','#e6ddc4'];
 const PALETTE_KINDS = [
-  ['default','Psychedelic + Basics'],
+  ['default','Psychedelic'],
+  ['basics','Basic Colors'],
+  ['neonfull','Psychedelic Full'],
   ['primary','Primary Tones'],
   ['secondary','Secondary Tones'],
   ['complementary','Complementary'],
@@ -1581,7 +1640,9 @@ function buildPalette(kind){
       return out;
     }
     case 'pico8': return PICO8.slice();
-    default: return NEON.concat(BASICS);
+    case 'basics': return BASICS.slice();
+    case 'neonfull': return NEON.slice();
+    default: return NEON.slice(0,8);
   }
 }
 function paletteColors(val){
@@ -1602,9 +1663,13 @@ function renderPalette(val){
     palEl.appendChild(d);
   });
 }
+let currentPalette = 'default';
 function rebuildPalSelect(keep){
   const sel = document.getElementById('palSelect');
   sel.innerHTML = '';
+  const ph = document.createElement('option');
+  ph.value = ''; ph.textContent = 'Palette'; ph.hidden = false;
+  sel.appendChild(ph);
   const og1 = document.createElement('optgroup'); og1.label = 'Built-in';
   for(const [v,label] of PALETTE_KINDS){
     const o = document.createElement('option'); o.value=v; o.textContent=label;
@@ -1622,35 +1687,39 @@ function rebuildPalSelect(keep){
   }
   const oc = document.createElement('option'); oc.value='custom'; oc.textContent='Custom (building…)';
   sel.appendChild(oc);
-  sel.value = keep || 'default';
+  sel.value = '';
 }
-document.getElementById('palSelect').addEventListener('change', e => renderPalette(e.target.value));
+document.getElementById('palSelect').addEventListener('change', e => {
+  const v = e.target.value;
+  if(!v) return;
+  currentPalette = v;
+  renderPalette(v);
+  e.target.value = '';
+});
 document.getElementById('palNew').addEventListener('click', () => {
   S.customPal = [];
-  const sel = document.getElementById('palSelect');
-  sel.value = 'custom';
+  currentPalette = 'custom';
   renderPalette('custom');
 });
 document.getElementById('palAddColor').addEventListener('click', () => {
-  const sel = document.getElementById('palSelect');
-  if(sel.value !== 'custom'){
-    S.customPal = paletteColors(sel.value).slice();
-    sel.value = 'custom';
+  if(currentPalette !== 'custom'){
+    S.customPal = paletteColors(currentPalette).slice();
+    currentPalette = 'custom';
   }
   if(S.customPal.length >= 32){ alert('Maximum 32 colors.'); return; }
   S.customPal.push(S.color);
   renderPalette('custom');
 });
 document.getElementById('palSave').addEventListener('click', () => {
-  const sel = document.getElementById('palSelect');
-  const cols = paletteColors(sel.value);
+  const cols = paletteColors(currentPalette);
   if(!cols.length){ alert('Palette is empty — use Add Color first.'); return; }
   const name = prompt('Name this palette:');
   if(!name) return;
   savedPalettes[name] = cols.slice();
   store.set('pf_palettes', savedPalettes);
-  rebuildPalSelect('saved:'+name);
-  renderPalette('saved:'+name);
+  rebuildPalSelect();
+  currentPalette = 'saved:'+name;
+  renderPalette(currentPalette);
 });
 
 /* ============ gradients ============ */
@@ -1930,6 +1999,8 @@ function serializeProject(){
   };
 }
 function applyProject(pr, cb){
+  ensureSizeOption(pr.N);
+  document.getElementById('gridSize').value = String(pr.N);
   initCanvas(pr.N);
   const Ls = new Array(pr.layers.length);
   let pending = pr.layers.length;
@@ -2036,12 +2107,35 @@ document.getElementById('projNewBtn').addEventListener('click', () => {
   document.getElementById('galleryModal').classList.remove('open');
 });
 
+/* ============ mobile layout: brush + color live in the sticky strip ============ */
+(function(){
+  const sideEl = document.getElementById('side');
+  const sBrush = document.getElementById('s-brush');
+  const sColor = document.getElementById('s-color');
+  const sExport = document.getElementById('s-export');
+  const mq = window.matchMedia('(max-width:760px)');
+  function relayout(){
+    if(mq.matches){
+      document.getElementById('mtopRow').insertBefore(sBrush, document.getElementById('mtopBtns'));
+      document.getElementById('mtopColor').appendChild(sColor);
+    } else {
+      sideEl.insertBefore(sColor, sExport);
+      sideEl.insertBefore(sBrush, sColor);
+    }
+  }
+  if(mq.addEventListener) mq.addEventListener('change', relayout);
+  relayout();
+})();
+
 /* ============ mobile icon bar ============ */
 function closeMobilePanels(){
-  document.querySelectorAll('.mopen').forEach(x => x.classList.remove('mopen'));
-  document.querySelectorAll('#mbar .mbtn').forEach(x => x.classList.remove('active'));
+  const open = document.querySelectorAll('.mopen');
+  const hadOpen = open.length > 0;
+  open.forEach(x => x.classList.remove('mopen'));
+  document.querySelectorAll('#mbar .mbtn, #bbar .mbtn').forEach(x => x.classList.remove('active'));
+  return hadOpen;
 }
-document.querySelectorAll('#mbar [data-panel]').forEach(btn => {
+document.querySelectorAll('#mbar [data-panel], #bbar [data-panel]').forEach(btn => {
   btn.addEventListener('click', () => {
     const el = document.getElementById(btn.dataset.panel);
     const wasOpen = el.classList.contains('mopen');
@@ -2082,20 +2176,10 @@ document.getElementById('stampSelect').addEventListener('change', e => {
   S.stampShape = e.target.value;
   setTool('stampc');
 });
-document.querySelectorAll('[data-tfill]').forEach(b =>
-  b.addEventListener('click', () => {
-    S.stampFill = b.dataset.tfill;
-    document.querySelectorAll('[data-tfill]').forEach(x =>
-      x.classList.toggle('on', x.dataset.tfill === S.stampFill));
-    setTool('stampc');
-  }));
-document.querySelectorAll('[data-sfill]').forEach(b =>
-  b.addEventListener('click', () => {
-    S.shapeFill = b.dataset.sfill;
-    document.querySelectorAll('[data-sfill]').forEach(x =>
-      x.classList.toggle('on', x.dataset.sfill === S.shapeFill));
-    setTool('shape');
-  }));
+document.getElementById('outlineToggle').addEventListener('click', e => {
+  S.fillOutline = !S.fillOutline;
+  e.target.classList.toggle('on', S.fillOutline);
+});
 document.querySelectorAll('[data-dmode]').forEach(b =>
   b.addEventListener('click', () => {
     S.ditherMode = b.dataset.dmode;
@@ -2104,12 +2188,29 @@ document.querySelectorAll('[data-dmode]').forEach(b =>
     setTool('gdither');
   }));
 
+function ensureSizeOption(n){
+  const sel = document.getElementById('gridSize');
+  if([...sel.options].some(o => o.value === String(n))) return;
+  const o = document.createElement('option');
+  o.value = String(n);
+  o.textContent = n + ' × ' + n;
+  sel.insertBefore(o, sel.querySelector('option[value="custom"]'));
+}
 document.getElementById('gridSize').addEventListener('change', e => {
-  const dirty = layers.some(l => l.pix.some(v=>v!==0));
-  if(dirty && !confirm('Changing canvas size clears all layers. Continue?')){
-    e.target.value = String(S.N); return;
+  let v = e.target.value;
+  if(v === 'custom'){
+    const raw = prompt('Canvas size in pixels (8–512):', String(S.N));
+    const n = Math.max(8, Math.min(512, parseInt(raw, 10) || 0));
+    if(!raw || !n){ ensureSizeOption(S.N); e.target.value = String(S.N); return; }
+    ensureSizeOption(n);
+    v = String(n);
+    e.target.value = v;
   }
-  initCanvas(parseInt(e.target.value,10));
+  const dirty = layers.some(l => l.pix.some(px=>px!==0));
+  if(dirty && !confirm('Changing canvas size clears all layers. Continue?')){
+    ensureSizeOption(S.N); e.target.value = String(S.N); return;
+  }
+  initCanvas(parseInt(v,10));
 });
 document.getElementById('tileSize').addEventListener('change', e => {
   S.tileN = parseInt(e.target.value,10);
@@ -2195,7 +2296,7 @@ function syncBrushUI(){
 
 /* ============ boot ============ */
 new ResizeObserver(fitOverlay).observe(wrap);
-initCanvas(32);
+initCanvas(128);
 const _auto = store.get('pf_autosave');
 if(_auto && _auto.N && Array.isArray(_auto.layers) && _auto.layers.length){
   applyProject(_auto);
