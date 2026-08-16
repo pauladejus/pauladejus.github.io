@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0E0E10" />
+<title>EMOJIPLAY — emoji drawing tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+:root{
+  --bg:#0E0E10;
+  --panel:#17171A;
+  --panel-2:#1E1E23;
+  --line:#2C2C34;
+  --violet:#5900FF;
+  --violet-soft:#7B33FF;
+  --text:#FFFFFF;
+  --muted:#9A9AA6;
+  --radius:10px;
+  --strip:56px;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font:500 13px/1.35 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+
+/* ---------- shell ---------- */
+#app{
+  height:100%;
+  display:grid;
+  grid-template-columns:236px 1fr 244px;
+  grid-template-rows:auto 1fr;
+  grid-template-areas:"head head head" "left stage right";
+}
+
+#head{
+  grid-area:head;
+  display:flex;
+  align-items:baseline;
+  gap:14px;
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--line);
+  background:var(--panel);
+}
+.wordmark{
+  font:800 24px/1 ui-sans-serif,system-ui,sans-serif;
+  letter-spacing:.14em;
+  background:linear-gradient(90deg,#FF2E93,#FF7A00,#FFE600,#00FF85,#00E5FF,#B14BFF,#FF2E93);
+  background-size:300% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  animation:hue 9s linear infinite;
+}
+@keyframes hue{to{background-position:300% 0;}}
+.tagline{color:var(--muted);font-size:12px;letter-spacing:.04em;}
+.byline{margin-left:auto;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;}
+
+/* ---------- panels ---------- */
+aside{
+  background:var(--panel);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent;
+}
+#left{grid-area:left;border-right:1px solid var(--line);}
+#right{grid-area:right;border-left:1px solid var(--line);}
+
+.sect{padding:14px 16px;border-bottom:1px solid var(--line);}
+.sect h2{
+  margin:0 0 11px;
+  font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+.sect[data-tint="1"] h2{color:#FF2E93;}
+.sect[data-tint="2"] h2{color:#00E5FF;}
+.sect[data-tint="3"] h2{color:#FFE600;}
+.sect[data-tint="4"] h2{color:#00FF85;}
+.sect[data-tint="5"] h2{color:#FF7A00;}
+.sect[data-tint="6"] h2{color:#B14BFF;}
+
+.row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.row:last-child{margin-bottom:0;}
+.row label{color:var(--muted);font-size:11px;letter-spacing:.05em;flex:0 0 62px;}
+.val{
+  margin-left:auto;font:600 11px/1 ui-monospace,Menlo,monospace;
+  color:var(--text);min-width:34px;text-align:right;
+}
+
+/* ---------- controls ---------- */
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  flex:1;height:3px;border-radius:2px;background:var(--line);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--violet);border:2px solid #fff;cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;
+  background:var(--violet);border:2px solid #fff;cursor:pointer;border-color:#fff;
+}
+input[type=color]{
+  -webkit-appearance:none;appearance:none;border:none;background:none;
+  width:38px;height:26px;padding:0;border-radius:6px;cursor:pointer;
+}
+input[type=color]::-webkit-color-swatch-wrapper{padding:0;}
+input[type=color]::-webkit-color-swatch{border:1px solid var(--line);border-radius:6px;}
+input[type=color]::-moz-color-swatch{border:1px solid var(--line);border-radius:6px;}
+
+select{
+  flex:1;background:var(--panel-2);color:var(--text);
+  border:1px solid var(--line);border-radius:8px;
+  padding:7px 9px;font:500 12px/1 inherit;cursor:pointer;
+}
+
+button{
+  font:600 12px/1 inherit;color:var(--text);
+  background:var(--panel-2);border:1px solid var(--line);
+  border-radius:8px;padding:9px 10px;cursor:pointer;
+  transition:border-color .12s,background .12s,transform .06s;
+}
+button:hover{border-color:var(--violet-soft);}
+button:active{transform:translateY(1px);}
+button[aria-pressed="true"]{
+  background:var(--violet);border-color:var(--violet);
+}
+button:focus-visible,select:focus-visible,input:focus-visible{
+  outline:2px solid #00E5FF;outline-offset:2px;
+}
+
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.stack{display:grid;gap:7px;}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.danger:hover{border-color:#FF4D4D;}
+
+/* ---------- swatches ---------- */
+.swatches{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;}
+.sw{
+  aspect-ratio:1;border-radius:5px;border:1px solid rgba(255,255,255,.14);
+  cursor:pointer;padding:0;
+}
+.sw[aria-pressed="true"]{outline:2px solid #fff;outline-offset:1px;background-clip:padding-box;}
+
+/* ---------- emoji palette ---------- */
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;}
+.em{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-size:19px;line-height:1;background:transparent;border:1px solid transparent;
+  border-radius:7px;cursor:pointer;padding:0;
+}
+.em:hover{background:var(--panel-2);border-color:var(--line);}
+.em[aria-pressed="true"]{background:var(--violet);border-color:var(--violet);}
+#current{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--radius);padding:10px 12px;
+}
+#current .big{font-size:28px;line-height:1;}
+#current .lbl{color:var(--muted);font-size:11px;}
+
+#chips{
+  position:sticky;top:0;z-index:5;
+  display:flex;flex-wrap:wrap;gap:5px;
+  padding:10px 16px;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+}
+#chips button{
+  padding:5px 9px;border-radius:20px;
+  font:600 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+}
+#chips button:hover{color:var(--text);border-color:var(--violet-soft);}
+#fontnote{
+  width:100%;color:var(--muted);
+  font:500 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.04em;padding-top:2px;
+}
+#recent:empty::after{
+  content:"emoji you use appear here";
+  color:var(--muted);font-size:11px;grid-column:1/-1;
+}
+
+/* ---------- stage ---------- */
+#stage{
+  grid-area:stage;
+  display:flex;align-items:center;justify-content:center;
+  padding:22px;min-width:0;min-height:0;
+  background:
+    radial-gradient(120% 90% at 50% 0%,#141419 0%,var(--bg) 60%);
+}
+#frame{
+  position:relative;
+  max-width:100%;max-height:100%;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  box-shadow:0 0 0 1px rgba(89,0,255,.18),0 20px 60px rgba(0,0,0,.55);
+  background-color:#232329;
+  background-image:
+    linear-gradient(45deg,#1a1a1f 25%,transparent 25%,transparent 75%,#1a1a1f 75%),
+    linear-gradient(45deg,#1a1a1f 25%,transparent 25%,transparent 75%,#1a1a1f 75%);
+  background-size:18px 18px;
+  background-position:0 0,9px 9px;
+}
+/* p5 writes inline width/height on the canvas — !important is required to override it */
+#frame canvas{
+  display:block;
+  width:100% !important;height:100% !important;
+  touch-action:none;cursor:crosshair;
+}
+
+/* ---------- mobile chrome (hidden on desktop) ---------- */
+#strip,#sheetbg,#bar{display:none;}
+
+@media (max-width:900px){
+  #app{
+    grid-template-columns:1fr;
+    grid-template-rows:auto auto 1fr auto;
+    grid-template-areas:"head" "strip" "stage" "bar";
+  }
+  #head{padding:10px 14px 9px;}
+  .wordmark{font-size:19px;}
+  .tagline,.byline{display:none;}
+
+  #strip{
+    grid-area:strip;display:flex;gap:7px;
+    padding:8px 12px;border-bottom:1px solid var(--line);
+    background:var(--panel);overflow-x:auto;
+  }
+  #strip button{flex:1 0 auto;padding:9px 13px;white-space:nowrap;}
+
+  #stage{padding:12px;}
+
+  #bar{
+    grid-area:bar;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    padding:9px 12px calc(9px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--line);background:var(--panel);
+  }
+  #bar button{padding:12px 8px;}
+  #bar .export{background:var(--violet);border-color:var(--violet);}
+
+  aside{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    max-height:66vh;border-top:1px solid var(--line);
+    border-radius:16px 16px 0 0;
+    transform:translateY(101%);
+    transition:transform .22s ease;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  }
+  aside.open{transform:translateY(0);}
+  #left,#right{border-left:none;border-right:none;}
+  aside::before{
+    content:"";display:block;width:38px;height:4px;border-radius:2px;
+    background:var(--line);margin:9px auto 3px;
+  }
+  #sheetbg{
+    display:block;position:fixed;inset:0;z-index:20;
+    background:rgba(0,0,0,.55);opacity:0;pointer-events:none;
+    transition:opacity .22s ease;
+  }
+  #sheetbg.on{opacity:1;pointer-events:auto;}
+  .grid{grid-template-columns:repeat(8,1fr);}
+  .em{font-size:22px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header id="head">
+    <span class="wordmark">EMOJIPLAY</span>
+    <span class="tagline">emoji drawing tool</span>
+    <span class="byline" id="byline">made by Paula Dejus</span>
+  </header>
+
+  <nav id="strip">
+    <button data-sheet="left">Tools</button>
+    <button data-sheet="right">Emoji</button>
+  </nav>
+
+  <aside id="left">
+    <div class="sect" data-tint="1">
+      <h2>Mode</h2>
+      <div class="seg">
+        <button data-mode="draw" aria-pressed="true">Draw</button>
+        <button data-mode="stamp" aria-pressed="false">Stamp</button>
+        <button data-mode="fill" aria-pressed="false">Fill</button>
+        <button data-mode="erase" aria-pressed="false">Erase</button>
+      </div>
+      <div class="row" style="margin-top:11px">
+        <label for="tol">Tolerance</label>
+        <input type="range" id="tol" min="0" max="180" value="40" />
+        <span class="val" id="tolVal">40</span>
+      </div>
+    </div>
+
+    <div class="sect" data-tint="2">
+      <h2>Brush</h2>
+      <div class="row">
+        <label for="brushColor">Color</label>
+        <input type="color" id="brushColor" value="#5900FF" />
+        <span class="val" id="brushHex">5900FF</span>
+      </div>
+      <div class="swatches" id="swatches"></div>
+      <div class="row" style="margin-top:11px">
+        <label for="thick">Size</label>
+        <input type="range" id="thick" min="1" max="80" value="6" />
+        <span class="val" id="thickVal">6</span>
+      </div>
+    </div>
+
+    <div class="sect" data-tint="3">
+      <h2>Stamp</h2>
+      <div class="row">
+        <label for="emSize">Size</label>
+        <input type="range" id="emSize" min="10" max="400" value="80" />
+        <span class="val" id="emSizeVal">80</span>
+      </div>
+      <div class="row">
+        <label for="scatter">Scatter</label>
+        <input type="range" id="scatter" min="0" max="200" value="0" />
+        <span class="val" id="scatterVal">0</span>
+      </div>
+      <div class="pair" style="margin-bottom:7px">
+        <button data-flip="x" aria-pressed="false">Flip ↔</button>
+        <button data-flip="y" aria-pressed="false">Flip ↕</button>
+      </div>
+      <div class="stack">
+        <button id="spin" aria-pressed="false">Random rotation</button>
+      </div>
+    </div>
+
+    <div class="sect" data-tint="4">
+      <h2>Mirror</h2>
+      <div class="pair">
+        <button data-mirror="x" aria-pressed="false">Mirror X</button>
+        <button data-mirror="y" aria-pressed="false">Mirror Y</button>
+      </div>
+    </div>
+
+    <div class="sect" data-tint="5">
+      <h2>Canvas</h2>
+      <div class="row">
+        <label for="shape">Shape</label>
+        <select id="shape">
+          <option value="1024x1024">Square 1024</option>
+          <option value="512x512">Square 512</option>
+          <option value="2048x2048">Square 2048</option>
+          <option value="1920x1080">Wide 1920×1080</option>
+          <option value="1080x1920">Tall 1080×1920</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="bgColor">Paper</label>
+        <input type="color" id="bgColor" value="#0E0E10" />
+        <button id="applyBg" style="flex:1">Fill paper</button>
+      </div>
+      <div class="stack">
+        <button id="transparent" aria-pressed="true">Transparent paper</button>
+      </div>
+    </div>
+
+    <div class="sect" data-tint="6">
+      <h2>Canvas actions</h2>
+      <div class="stack">
+        <button id="undo">Undo</button>
+        <button id="clear" class="danger">Clear drawing</button>
+        <button id="export" style="background:var(--violet);border-color:var(--violet)">Export PNG</button>
+      </div>
+    </div>
+  </aside>
+
+  <main id="stage"><div id="frame"></div></main>
+
+  <aside id="right">
+    <div class="sect" data-tint="1">
+      <h2>Selected</h2>
+      <div id="current"><span class="big">☀️</span><span class="lbl">tap any emoji below</span></div>
+      <h2 style="margin:13px 0 8px">Recent</h2>
+      <div class="grid" id="recent"></div>
+    </div>
+    <div id="chips"></div>
+    <div id="palette"></div>
+  </aside>
+
+  <nav id="bar">
+    <button id="undo2">Undo</button>
+    <button id="clear2" class="danger">Clear</button>
+    <button id="export2" class="export">Export</button>
+  </nav>
+</div>
+<div id="sheetbg"></div>
+
+<script>
+/* ============================================================
+   EMOJIPLAY — emoji drawing tool
+   Descended from the original p5 emoji sketch; rebuilt as a
+   single-file tool in the PIXELPLAY shell.
+   ============================================================ */
+
+const GROUPS = [
+  {name:"Sky", tint:2, list:['☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️','🌩️','🌨️','❄️','☃️','⛄','🌬️','💨','🌪️','🌫️','🌈','☂️','☔','⚡','🔥','💧','💦','🌊','🌡️','🌙','🌛','🌜','🌝','🌞','⭐','🌟','✨','💫','🌠','☄️','🪐','🌌','🌍','🌎','🌏','🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘']},
+
+  {name:"Trees", tint:4, list:['🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🌾','🌵','🌴','🌳','🌲','🪴','🪵','🍄','🌰','🪨','🐚']},
+
+  {name:"Flowers", tint:1, list:['🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','💐','🌾','🍯']},
+
+  {name:"Food", tint:3, list:['🍎','🍏','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥬','🥒','🌶️','🫑','🌽','🥕','🫒','🧄','🧅','🥔','🍠','🥐','🥖','🍞','🧀','🥚','🍳','🥞','🧇','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🥙','🧆','🍝','🍜','🍲','🍣','🍱','🍙','🍚','🍘','🍥','🥟','🍤','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','☕','🍵','🧃','🥤','🧋','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🍽️','🥄','🍴','🔪']},
+
+  {name:"Animals", tint:6, list:['🐶','🐕','🦮','🐩','🐺','🦊','🦝','🐱','🐈','🦁','🐯','🐅','🐆','🐴','🐎','🦄','🦓','🦌','🐮','🐂','🐃','🐄','🐷','🐖','🐗','🐽','🐏','🐑','🐐','🐪','🐫','🦙','🦒','🐘','🦣','🦏','🦛','🐭','🐁','🐀','🐹','🐰','🐇','🐿️','🦫','🦔','🦇','🐻','🐨','🐼','🦥','🦦','🦨','🦘','🦡','🐾','🐒','🦍','🦧','🐵']},
+
+  {name:"Birds", tint:2, list:['🦃','🐔','🐓','🐣','🐤','🐥','🐦','🐧','🕊️','🦅','🦆','🦢','🦉','🦤','🪶','🦩','🦚','🦜','🥚']},
+
+  {name:"Water life", tint:4, list:['🐸','🐊','🐢','🦎','🐍','🐲','🐉','🦕','🦖','🐳','🐋','🐬','🦭','🐟','🐠','🐡','🦈','🐙','🦀','🦞','🦐','🦑','🦪','🌊']},
+
+  {name:"Bugs", tint:5, list:['🐌','🦋','🐛','🐜','🐝','🪲','🐞','🦗','🪳','🕷️','🕸️','🦂','🦟','🪰','🪱','🦠']},
+
+  {name:"People", tint:5, list:['🧑','👶','🧒','👦','👧','👩','👨','🧓','👴','👵','🧔','👮','🕵️','💂','👷','🤴','👸','👳','👲','🧕','🤵','👰','🤰','🤱','👼','🎅','🤶','🦸','🦹','🧙','🧚','🧛','🧜','🧝','🧞','🧟','💆','💇','🚶','🧍','🧎','🏃','💃','🕺','🕴️','👯','🧖','🧗','🤺','🏇','⛷️','🏂','🏌️','🏄','🚣','🏊','⛹️','🏋️','🚴','🚵','🤸','🤼','🤽','🤾','🤹','🧘','🛀','🛌','👪','👫','👬','👭','💏','💑','🗣️','👤','👥','🫂']},
+
+  {name:"Hands", tint:3, list:['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','💋','🩸']},
+
+  {name:"Buildings", tint:1, list:['🏠','🏡','🏘️','🏚️','🏗️','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌','🛕','🕍','⛩️','🕋','⛲','⛺','🏕️','🏞️','🏝️','🏖️','🏜️','🌋','⛰️','🏔️','🗻','🏛️','🏟️','🎪','🌁','🌃','🏙️','🌄','🌅','🌆','🌇','🌉','♨️','🎠','🎡','🎢','💈','🎑','🎐','🚧','🚏','🛣️','🛤️','🌐','🧭','🗺️','🚪','🪟','🧱','🪜']},
+
+  {name:"Transport", tint:5, list:['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🦽','🦼','🛴','🚲','🛵','🏍️','🛺','🚨','🚔','🚍','🚘','🚖','🚡','🚠','🚟','🚃','🚋','🚞','🚝','🚄','🚅','🚈','🚂','🚆','🚇','🚊','🚉','✈️','🛫','🛬','🛩️','💺','🛰️','🚀','🛸','🚁','🛶','⛵','🚤','🛥️','🛳️','⛴️','🚢','⚓','⛽','🚦','🚥','🗿']},
+
+  {name:"Objects", tint:6, list:['💡','🔦','🏮','🪔','🕯️','📷','📸','📹','🎥','📺','📻','🎙️','⏰','⌚','⏳','⌛','📱','💻','⌨️','🖥️','🖨️','🖱️','💾','💿','📀','📼','🔋','🔌','🧲','🔧','🔨','⚒️','🛠️','⛏️','🪓','🪚','🔩','⚙️','🧰','🪣','🧹','🧺','🧼','🛁','🚿','🚽','🪑','🛋️','🛏️','🖼️','🎁','🎀','🎈','🎉','🎊','🧸','🪁','🎏','🎎','🪆','📚','📖','📝','✏️','🖊️','🖌️','🖍️','📌','📍','📎','🔑','🗝️','🔒','🔓','💰','💎','⚖️','🔭','🔬','🧪','🧫','🧬','💊','🩹','🩺','🛒','🧳','☂️','👓','🕶️','👒','🎩','🧢','👑','💄','👗','👕','👖','🧥','🧦','👟','👞','👠','🥾','🧤','🎒','🧵','🧶']},
+
+  {name:"Music", tint:3, list:['🎵','🎶','🎼','🎤','🎧','🎷','🎸','🎹','🎺','🎻','🪕','🥁','🪘','🎬','🎭','🎨','🎯','🎲','🎰','🎳','🕹️','🎮','🃏','🀄','📀','🔔']},
+
+  {name:"Hearts", tint:1, list:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','💌','💢','💥','💫','💦','💨','🕳️','💤','🔥']},
+
+  {name:"Shapes", tint:2, list:['🔴','🟠','🟡','🟢','🔵','🟣','🟤','⚫','⚪','🟥','🟧','🟨','🟩','🟦','🟪','🟫','⬛','⬜','◼️','◻️','◾','◽','▪️','▫️','🔶','🔷','🔸','🔹','🔺','🔻','💠','🔘','🔳','🔲','⭐','🌟','✳️','✴️','❇️','✨','⚡','♠️','♥️','♦️','♣️','🔱','⚜️','🌀','➰','➿','〽️','✔️','❌','⭕','🚫','⛔','💯','🔆','🌈']}
+];
+
+const SWATCHES = ['#FFFFFF','#000000','#5900FF','#FF2E93','#FF7A00','#FFE600','#00FF85','#00E5FF','#B14BFF'];
+
+const state = {
+  mode:'draw',
+  color:'#5900FF',
+  thickness:6,
+  emojiSize:80,
+  scatter:0,
+  tolerance:40,
+  spin:false,
+  flipX:false,
+  flipY:false,
+  mirrorX:false,
+  mirrorY:false,
+  transparent:true,
+  paper:'#0E0E10',
+  emoji:'✨',
+  W:1024, H:1024
+};
+
+let bgLayer, drawLayer;
+let history = [];
+const MAX_HISTORY = 24;
+
+let pointerDown = false, prev = null, lastStamp = null;
+let hover = null;
+let canvasElt = null;
+
+const $ = s => document.querySelector(s);
+const frame = $('#frame');
+
+/* ---------------- p5 ---------------- */
+function setup(){
+  const c = createCanvas(state.W, state.H);
+  c.parent(frame);
+  canvasElt = c.elt;
+  pixelDensity(1);
+  buildLayers();
+  attachPointer(c.elt);
+  sizeFrame();
+}
+
+function buildLayers(){
+  if (bgLayer) bgLayer.remove();
+  if (drawLayer) drawLayer.remove();
+  bgLayer = createGraphics(state.W, state.H);
+  drawLayer = createGraphics(state.W, state.H);
+  bgLayer.clear();
+  drawLayer.clear();
+  if (!state.transparent) bgLayer.background(state.paper);
+  drawLayer.textAlign(CENTER, CENTER);
+  drawLayer.strokeCap(ROUND);
+  drawLayer.strokeJoin(ROUND);
+  history = [];
+}
+
+function draw(){
+  clear();
+  image(bgLayer, 0, 0);
+  image(drawLayer, 0, 0);
+  drawPreview();
+}
+
+/* Ghost of the mark you are about to make. Drawn on the visible canvas only,
+   never on drawLayer, so it is never exported. */
+function drawPreview(){
+  if (!hover) return;
+
+  if (state.mode === 'stamp'){
+    const s = state.emojiSize;
+    push();
+    drawingContext.globalAlpha = 0.5;
+    noStroke();
+    fill(state.color);
+    textAlign(CENTER, CENTER);
+    textSize(s);
+    translate(hover.x, hover.y);
+    scale(state.flipX ? -1 : 1, state.flipY ? -1 : 1);
+    text(state.emoji, 0, 0);
+    pop();
+
+  } else if (state.mode === 'draw' || state.mode === 'erase'){
+    push();
+    drawingContext.globalAlpha = 0.7;
+    noFill();
+    stroke(state.mode === 'erase' ? 255 : 255);
+    strokeWeight(Math.max(1, state.W / 800));
+    circle(hover.x, hover.y, Math.max(3, state.thickness));
+    pop();
+  }
+}
+
+/* -------------- sizing -------------- */
+function sizeFrame(){
+  const stage = $('#stage');
+  const pad = 2;
+  const availW = stage.clientWidth  - parseFloat(getComputedStyle(stage).paddingLeft) * 2 - pad;
+  const availH = stage.clientHeight - parseFloat(getComputedStyle(stage).paddingTop)  * 2 - pad;
+  const scale = Math.min(availW / state.W, availH / state.H);
+  frame.style.width  = Math.max(80, Math.floor(state.W * scale)) + 'px';
+  frame.style.height = Math.max(80, Math.floor(state.H * scale)) + 'px';
+}
+window.addEventListener('resize', () => sizeFrame());
+
+/* -------------- pointer -------------- */
+function toCanvas(e){
+  // measure the canvas itself, not the frame — the frame's border would skew the mapping
+  const r = canvasElt.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (state.W / r.width),
+    y: (e.clientY - r.top)  * (state.H / r.height)
+  };
+}
+
+const active = new Map();   // every pointer currently on the canvas
+let pinch = null;           // two-finger sizing gesture
+
+function pinchSpan(){
+  const p = [...active.values()];
+  return dist(p[0].x, p[0].y, p[1].x, p[1].y);
+}
+function pinchMid(){
+  const p = [...active.values()];
+  return {x:(p[0].x + p[1].x) / 2, y:(p[0].y + p[1].y) / 2};
+}
+
+function startPinch(){
+  // a pinch is not a drawing gesture — roll back the mark the first finger made
+  if (pointerDown){ undo(); pointerDown = false; prev = null; lastStamp = null; }
+  pinch = {
+    span: pinchSpan(),
+    size: state.mode === 'stamp' ? state.emojiSize : state.thickness
+  };
+  hover = pinchMid();
+}
+
+function updatePinch(){
+  const k = pinchSpan() / Math.max(1, pinch.span);
+  if (state.mode === 'stamp')      setSize('emojiSize', 'emSize', 'emSizeVal', pinch.size * k);
+  else if (state.mode !== 'fill')  setSize('thickness', 'thick', 'thickVal', pinch.size * k);
+  hover = pinchMid();   // ghost sits between the fingers, live at the new size
+}
+
+function attachPointer(el){
+  el.addEventListener('pointerdown', e => {
+    const p = toCanvas(e);
+    active.set(e.pointerId, p);
+
+    if (active.size === 2){ startPinch(); e.preventDefault(); return; }
+    if (active.size > 1)  { e.preventDefault(); return; }   // ignore extra fingers / palm
+
+    el.setPointerCapture(e.pointerId);
+    pushHistory();
+    pointerDown = true;
+    prev = p;
+    hover = p;
+    lastStamp = null;
+    if (state.mode === 'stamp') stampAt(p);
+    else if (state.mode === 'fill') fillAt(p);
+    else strokeSeg(p, p);
+    e.preventDefault();
+  });
+
+  el.addEventListener('pointermove', e => {
+    const p = toCanvas(e);
+    if (active.has(e.pointerId)) active.set(e.pointerId, p);
+
+    if (pinch && active.size >= 2){ updatePinch(); e.preventDefault(); return; }
+
+    hover = p;
+    if (!pointerDown || state.mode === 'fill') return;
+    if (state.mode === 'stamp') {
+      const gap = Math.max(6, state.emojiSize * 0.42);
+      if (!lastStamp || dist(p.x, p.y, lastStamp.x, lastStamp.y) > gap) stampAt(p);
+    } else {
+      strokeSeg(prev, p);
+    }
+    prev = p;
+    e.preventDefault();
+  });
+
+  const end = e => {
+    if (e) active.delete(e.pointerId);
+    if (pinch && active.size < 2){ pinch = null; hover = null; }
+    pointerDown = false; prev = null; lastStamp = null;
+    // touch has no hover state — leaving the ghost behind would strand it on canvas
+    if (e && e.pointerType !== 'mouse') hover = null;
+    if (e) e.preventDefault();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('pointerleave', () => { if (!active.size) hover = null; });
+  el.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Wheel resizes the active tool. Multiplicative so it feels even across the
+  // whole range — a fixed step crawls at 400px and jumps at 12px.
+  el.addEventListener('wheel', e => {
+    e.preventDefault();
+    const dir = e.deltaY < 0 ? 1 : -1;
+    const factor = Math.pow(1.12, dir);
+    // below ~8 the multiplier rounds back to the same integer and the wheel stalls
+    const grow = v => (Math.abs(v * factor - v) < 1 ? v + dir : v * factor);
+    if (state.mode === 'stamp'){
+      setSize('emojiSize', 'emSize', 'emSizeVal', grow(state.emojiSize));
+    } else if (state.mode === 'draw' || state.mode === 'erase'){
+      setSize('thickness', 'thick', 'thickVal', grow(state.thickness));
+    } else if (state.mode === 'fill'){
+      setSize('tolerance', 'tol', 'tolVal', state.tolerance + dir * 4);
+    }
+  }, {passive:false});
+}
+
+/* Keep state, slider and readout in sync when size is changed from anywhere
+   other than the slider itself (currently the scroll wheel). */
+function setSize(key, sliderId, valId, value){
+  const el = document.getElementById(sliderId);
+  const v = Math.round(Math.min(+el.max, Math.max(+el.min, value)));
+  state[key] = v;
+  el.value = v;
+  document.getElementById(valId).textContent = v;
+}
+
+/* -------------- marks -------------- */
+function mirrored(x, y){
+  const pts = [{x, y}];
+  if (state.mirrorX) pts.push({x: state.W - x, y});
+  if (state.mirrorY) pts.push({x, y: state.H - y});
+  if (state.mirrorX && state.mirrorY) pts.push({x: state.W - x, y: state.H - y});
+  return pts;
+}
+
+function strokeSeg(a, b){
+  const erasing = state.mode === 'erase';
+  if (erasing) drawLayer.erase();
+  drawLayer.noFill();
+  drawLayer.stroke(erasing ? 255 : state.color);
+  drawLayer.strokeWeight(state.thickness);
+  const A = mirrored(a.x, a.y), B = mirrored(b.x, b.y);
+  for (let i = 0; i < A.length; i++) drawLayer.line(A[i].x, A[i].y, B[i].x, B[i].y);
+  if (erasing) drawLayer.noErase();
+  drawLayer.fill(255); // restore fill so later text()/shape calls aren't silently dropped
+}
+
+function stampAt(p){
+  lastStamp = p;
+  const s = state.emojiSize;
+  // text() renders with the FILL. strokeSeg() calls noFill() for lines, and that
+  // state persists on the renderer — without re-enabling it here, stamps are invisible.
+  drawLayer.fill(state.color);
+  drawLayer.noStroke();
+  drawLayer.textAlign(CENTER, CENTER);
+  drawLayer.textSize(s);
+  mirrored(p.x, p.y).forEach(pt => {
+    const jx = state.scatter ? random(-state.scatter, state.scatter) : 0;
+    const jy = state.scatter ? random(-state.scatter, state.scatter) : 0;
+    drawLayer.push();
+    drawLayer.translate(pt.x + jx, pt.y + jy);
+    if (state.spin) drawLayer.rotate(random(TWO_PI));
+    if (state.flipX || state.flipY) drawLayer.scale(state.flipX ? -1 : 1, state.flipY ? -1 : 1);
+    drawLayer.text(state.emoji, 0, 0);
+    drawLayer.pop();
+  });
+}
+
+/* -------------- paint bucket -------------- */
+function hexToRGBA(hex){
+  const h = hex.replace('#','');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16), 255];
+}
+
+function fillAt(p){
+  const W = state.W, H = state.H;
+  const ctx = drawLayer.elt.getContext('2d', {willReadFrequently:true});
+  const img = ctx.getImageData(0, 0, W, H);
+  const d = img.data;
+  const [fr, fg, fb, fa] = hexToRGBA(state.color);
+  const tol = state.tolerance;
+
+  const seeds = mirrored(p.x, p.y).map(pt => ({
+    x: Math.floor(constrain(pt.x, 0, W - 1)),
+    y: Math.floor(constrain(pt.y, 0, H - 1))
+  }));
+
+  // sample the target colour once, from the first seed
+  const s0 = (seeds[0].y * W + seeds[0].x) * 4;
+  const tr = d[s0], tg = d[s0+1], tb = d[s0+2], ta = d[s0+3];
+
+  // already the fill colour? nothing to do
+  if (Math.abs(tr-fr) < 2 && Math.abs(tg-fg) < 2 && Math.abs(tb-fb) < 2 && Math.abs(ta-fa) < 2) return;
+
+  const match = i => {
+    const a = d[i+3];
+    // transparent pixels compare on alpha alone; RGB is meaningless when a=0
+    if (ta === 0) return a <= tol;
+    return Math.abs(d[i]-tr) <= tol && Math.abs(d[i+1]-tg) <= tol &&
+           Math.abs(d[i+2]-tb) <= tol && Math.abs(a-ta) <= tol;
+  };
+
+  const seen = new Uint8Array(W * H);
+  const stack = [];
+  seeds.forEach(s => stack.push(s.x, s.y));
+
+  while (stack.length){
+    const y = stack.pop(), x = stack.pop();
+    if (y < 0 || y >= H) continue;
+
+    let xl = x;
+    while (xl >= 0 && !seen[y*W + xl] && match((y*W + xl) * 4)) xl--;
+    xl++;
+    let xr = x;
+    while (xr < W && !seen[y*W + xr] && match((y*W + xr) * 4)) xr++;
+    xr--;
+    if (xl > xr) continue;
+
+    for (let i = xl; i <= xr; i++){
+      const idx = y*W + i, o = idx * 4;
+      seen[idx] = 1;
+      d[o] = fr; d[o+1] = fg; d[o+2] = fb; d[o+3] = fa;
+    }
+    for (let i = xl; i <= xr; i++){
+      if (y > 0     && !seen[(y-1)*W + i] && match(((y-1)*W + i) * 4)) stack.push(i, y-1);
+      if (y < H - 1 && !seen[(y+1)*W + i] && match(((y+1)*W + i) * 4)) stack.push(i, y+1);
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+}
+
+/* -------------- glyph support -------------- */
+/* Which emoji render depends on the emoji font installed on this machine, not on
+   the file. Draw each one offscreen and compare it to a guaranteed-missing glyph:
+   if they match, the font has no coverage and we drop it from the palette. */
+const glyphSupported = (() => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 24;
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '18px sans-serif';
+  const snap = ch => {
+    x.clearRect(0, 0, 24, 24);
+    x.fillText(ch, 12, 12);
+    return x.getImageData(0, 0, 24, 24).data.join(',');
+  };
+  const tofu  = snap('\uFFFF');   // noncharacter — always the missing-glyph box
+  const blank = snap(' ');
+  return ch => { const s = snap(ch); return s !== tofu && s !== blank; };
+})();
+
+/* -------------- history -------------- */
+function pushHistory(){
+  history.push(drawLayer.get());
+  if (history.length > MAX_HISTORY) history.shift();
+}
+
+function undo(){
+  const snap = history.pop();
+  if (!snap) return;
+  drawLayer.clear();
+  drawLayer.image(snap, 0, 0);
+}
+
+/* -------------- export -------------- */
+function exportPNG(){
+  const out = document.createElement('canvas');
+  out.width = state.W; out.height = state.H;
+  const ctx = out.getContext('2d');
+  if (!state.transparent){ ctx.fillStyle = state.paper; ctx.fillRect(0, 0, state.W, state.H); }
+  ctx.drawImage(bgLayer.elt, 0, 0);
+  ctx.drawImage(drawLayer.elt, 0, 0);
+  out.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'emojiplay_' + Date.now() + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+}
+
+/* -------------- UI wiring -------------- */
+function press(btn, on){ btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+
+// mode
+document.querySelectorAll('[data-mode]').forEach(b => {
+  b.addEventListener('click', () => {
+    state.mode = b.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(o => press(o, o === b));
+  });
+});
+
+// brush colour
+const brushColor = $('#brushColor'), brushHex = $('#brushHex');
+brushColor.addEventListener('input', () => {
+  state.color = brushColor.value;
+  brushHex.textContent = brushColor.value.replace('#','').toUpperCase();
+  syncSwatches();
+});
+
+const swWrap = $('#swatches');
+SWATCHES.forEach(hex => {
+  const b = document.createElement('button');
+  b.className = 'sw';
+  b.style.background = hex;
+  b.title = hex;
+  b.dataset.hex = hex;
+  b.addEventListener('click', () => {
+    state.color = hex;
+    brushColor.value = hex;
+    brushHex.textContent = hex.replace('#','').toUpperCase();
+    syncSwatches();
+  });
+  swWrap.appendChild(b);
+});
+function syncSwatches(){
+  swWrap.querySelectorAll('.sw').forEach(b =>
+    press(b, b.dataset.hex.toLowerCase() === state.color.toLowerCase()));
+}
+syncSwatches();
+
+// sliders
+function slider(id, valId, key){
+  const s = $('#' + id), v = $('#' + valId);
+  s.addEventListener('input', () => { state[key] = +s.value; v.textContent = s.value; });
+}
+slider('thick','thickVal','thickness');
+slider('emSize','emSizeVal','emojiSize');
+slider('scatter','scatterVal','scatter');
+slider('tol','tolVal','tolerance');
+
+// toggles
+const spinBtn = $('#spin');
+spinBtn.addEventListener('click', () => { state.spin = !state.spin; press(spinBtn, state.spin); });
+
+document.querySelectorAll('[data-flip]').forEach(b => {
+  b.addEventListener('click', () => {
+    const k = b.dataset.flip === 'x' ? 'flipX' : 'flipY';
+    state[k] = !state[k];
+    press(b, state[k]);
+  });
+});
+
+document.querySelectorAll('[data-mirror]').forEach(b => {
+  b.addEventListener('click', () => {
+    const k = b.dataset.mirror === 'x' ? 'mirrorX' : 'mirrorY';
+    state[k] = !state[k];
+    press(b, state[k]);
+  });
+});
+
+// paper
+const bgColor = $('#bgColor'), transBtn = $('#transparent');
+$('#applyBg').addEventListener('click', () => {
+  state.paper = bgColor.value;
+  state.transparent = false;
+  press(transBtn, false);
+  bgLayer.background(state.paper);
+});
+transBtn.addEventListener('click', () => {
+  state.transparent = !state.transparent;
+  press(transBtn, state.transparent);
+  if (state.transparent) bgLayer.clear();
+  else bgLayer.background(state.paper);
+});
+
+// canvas shape
+$('#shape').addEventListener('change', e => {
+  const [w, h] = e.target.value.split('x').map(Number);
+  const keep = drawLayer.get();
+  state.W = w; state.H = h;
+  resizeCanvas(w, h);
+  buildLayers();
+  drawLayer.image(keep, 0, 0, w, h);
+  sizeFrame();
+});
+
+// actions
+['#undo','#undo2'].forEach(s => $(s).addEventListener('click', undo));
+['#clear','#clear2'].forEach(s => $(s).addEventListener('click', () => { pushHistory(); drawLayer.clear(); }));
+['#export','#export2'].forEach(s => $(s).addEventListener('click', exportPNG));
+
+// keyboard
+function onKey(e){
+  if (!e.key) return;                                    // some synthetic events have no key
+  if (e._ep) return;                                     // window and document both fire; handle once
+  e._ep = true;
+  const t = e.target;
+  if (t && t.matches && t.matches('input,select,textarea')) return;
+
+  const k = e.key.toLowerCase();
+
+  // Undo — Ctrl+Z / Cmd+Z
+  if ((e.metaKey || e.ctrlKey) && k === 'z'){
+    e.preventDefault();
+    e.stopPropagation();
+    undo();
+    return;
+  }
+
+  if (e.metaKey || e.ctrlKey) return;                    // leave other shortcuts alone
+
+  const map = {d:'draw', s:'stamp', f:'fill', e:'erase'};
+  const m = map[k];
+  if (m){
+    state.mode = m;
+    document.querySelectorAll('[data-mode]').forEach(o => press(o, o.dataset.mode === m));
+  }
+}
+
+// capture phase, on both targets — the shortcut has to land before anything else
+// swallows it, and window alone is unreliable inside a framed page
+window.addEventListener('keydown', onKey, true);
+document.addEventListener('keydown', onKey, true);
+
+// emoji palette
+const palette = $('#palette'), current = $('#current');
+const chips = $('#chips'), recent = $('#recent');
+const recentList = [];
+
+function selectEmoji(em){
+  state.emoji = em;
+  palette.querySelectorAll('.em').forEach(o => press(o, o.dataset.em === em));
+  current.querySelector('.big').textContent = em;
+  current.querySelector('.lbl').textContent = 'Stamp mode — drag to place';
+  if (state.mode !== 'stamp'){
+    state.mode = 'stamp';
+    document.querySelectorAll('[data-mode]').forEach(o => press(o, o.dataset.mode === 'stamp'));
+  }
+  const at = recentList.indexOf(em);
+  if (at > -1) recentList.splice(at, 1);
+  recentList.unshift(em);
+  if (recentList.length > 12) recentList.pop();
+  renderRecent();
+  // on a phone the palette covers the canvas — get out of the way once picked
+  if (window.matchMedia('(max-width:900px)').matches) closeSheets();
+}
+
+function renderRecent(){
+  recent.textContent = '';
+  recentList.forEach(em => {
+    const b = document.createElement('button');
+    b.className = 'em';
+    b.textContent = em;
+    b.dataset.em = em;
+    b.setAttribute('aria-label', 'Emoji ' + em);
+    b.addEventListener('click', () => selectEmoji(em));
+    recent.appendChild(b);
+  });
+}
+
+let dropped = 0;
+GROUPS.forEach((g, gi) => {
+  const list = g.list.filter(em => {
+    const ok = glyphSupported(em);
+    if (!ok) dropped++;
+    return ok;
+  });
+  if (!list.length) return;
+
+  const sect = document.createElement('div');
+  sect.className = 'sect';
+  sect.dataset.tint = g.tint;
+  sect.id = 'sec' + gi;
+  const h = document.createElement('h2');
+  h.textContent = g.name;
+  sect.appendChild(h);
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  list.forEach(em => {
+    const b = document.createElement('button');
+    b.className = 'em';
+    b.textContent = em;
+    b.dataset.em = em;
+    b.setAttribute('aria-label', 'Emoji ' + em);
+    b.addEventListener('click', () => selectEmoji(em));
+    grid.appendChild(b);
+  });
+  sect.appendChild(grid);
+  palette.appendChild(sect);
+
+  const chip = document.createElement('button');
+  chip.textContent = g.name;
+  chip.addEventListener('click', () => {
+    $('#right').scrollTo({top: sect.offsetTop - chips.offsetHeight, behavior:'smooth'});
+  });
+  chips.appendChild(chip);
+});
+
+// start on the first emoji that this machine can actually render
+const firstBtn = palette.querySelector('.em');
+if (firstBtn){
+  state.emoji = firstBtn.dataset.em;
+  current.querySelector('.big').textContent = state.emoji;
+  firstBtn.setAttribute('aria-pressed','true');
+}
+if (dropped){
+  const note = document.createElement('span');
+  note.id = 'fontnote';
+  note.textContent = dropped + ' hidden — no font coverage';
+  chips.appendChild(note);
+}
+
+// mobile sheets
+const sheetbg = $('#sheetbg');
+function closeSheets(){
+  document.querySelectorAll('aside').forEach(a => a.classList.remove('open'));
+  sheetbg.classList.remove('on');
+}
+document.querySelectorAll('[data-sheet]').forEach(b => {
+  b.addEventListener('click', () => {
+    const target = $('#' + b.dataset.sheet);
+    const wasOpen = target.classList.contains('open');
+    closeSheets();
+    if (!wasOpen){ target.classList.add('open'); sheetbg.classList.add('on'); }
+  });
+});
+sheetbg.addEventListener('click', closeSheets);
+</script>
+</body>
+</html>
