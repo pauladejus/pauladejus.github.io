@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0B0B0D">
+<title>GRIDPLAY by Paula</title>
+<style>
+  :root{
+    --bg:#0B0B0D;
+    --panel:#141418;
+    --line:#2A2A33;
+    --dim:#8A8A96;
+    --accent:#5900FF;
+    --cols:2;
+    --gap:8px;
+    --bar:54px;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:#fff;
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+    min-height:100dvh;
+    overscroll-behavior-y:contain;
+  }
+  body.dragging{ touch-action:none; -webkit-user-select:none; user-select:none; cursor:grabbing; }
+
+  /* ---------- locked bars ---------- */
+  .bar{
+    position:fixed; left:0; right:0; z-index:50;
+    display:flex; align-items:center; gap:8px;
+    height:var(--bar); padding:0 10px;
+    background:rgba(11,11,13,.94);
+    backdrop-filter:blur(14px);
+  }
+  #top{ top:0; padding-top:env(safe-area-inset-top); height:calc(var(--bar) + env(safe-area-inset-top)); border-bottom:1px solid var(--line); }
+  #bot{ bottom:0; padding-bottom:env(safe-area-inset-bottom); height:calc(var(--bar) + env(safe-area-inset-bottom)); border-top:1px solid var(--line); }
+
+  .btn{
+    font-family:var(--mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    height:36px; padding:0 12px;
+    background:var(--panel); color:#fff;
+    border:1px solid var(--line); border-radius:10px;
+    cursor:pointer; white-space:nowrap; flex:none;
+  }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); font-weight:600; }
+  .btn.danger{ color:#FF3B6B; border-color:#39232C; }
+  .btn:disabled{ opacity:.3; cursor:not-allowed; }
+  .btn.wide{ flex:1; }
+  :focus-visible{ outline:2px solid #31D9FF; outline-offset:2px; }
+
+  .sel{
+    position:relative; display:flex; align-items:center; flex:none;
+    height:36px; border:1px solid var(--line); border-radius:10px; background:var(--panel);
+  }
+  .sel select{
+    appearance:none; -webkit-appearance:none;
+    background:transparent; border:0; color:#fff;
+    font-family:var(--mono); font-size:12px; font-weight:600;
+    height:36px; padding:0 26px 0 11px; cursor:pointer;
+  }
+  .sel::after{
+    content:""; position:absolute; right:10px; top:50%;
+    width:6px; height:6px; margin-top:-4px;
+    border-right:1.5px solid var(--dim); border-bottom:1.5px solid var(--dim);
+    transform:rotate(45deg); pointer-events:none;
+  }
+  .tally{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--dim);
+    margin-left:auto; padding-right:4px; white-space:nowrap;
+  }
+  .wordmark{
+    font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.18em;
+    background:linear-gradient(90deg,#FF3B6B,#FFB020,#5DFF7A,#31D9FF,#5900FF,#FF3BE1,#FF3B6B);
+    background-size:400% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:hue 9s linear infinite; padding-left:2px;
+  }
+  .credit{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    color:var(--dim); margin-right:auto; padding-left:6px; white-space:nowrap;
+  }
+  @keyframes hue{ to{ background-position:400% 0; } }
+
+  /* ---------- grid ---------- */
+  main{
+    padding: calc(var(--bar) + env(safe-area-inset-top) + var(--gap)) var(--gap)
+             calc(var(--bar) + env(safe-area-inset-bottom) + var(--gap));
+  }
+  #grid{
+    display:grid;
+    grid-template-columns:repeat(var(--cols), minmax(0,1fr));
+    gap:var(--gap);
+  }
+  .card{
+    position:relative; aspect-ratio:1/1;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:10px; overflow:hidden;
+    cursor:grab; touch-action:pan-y;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  .card img{ display:block; width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
+  .idx{
+    position:absolute; left:5px; top:5px;
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    font-variant-numeric:tabular-nums;
+    padding:3px 6px; border-radius:6px;
+    background:rgba(11,11,13,.7); backdrop-filter:blur(6px);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .card.picked{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+  .card.picked .idx{ background:var(--accent); box-shadow:none; }
+  .card.held{ opacity:.2; outline:2px dashed var(--accent); outline-offset:-2px; }
+  .card.held img{ visibility:hidden; }
+
+  #lift{
+    position:fixed; top:0; left:0; z-index:90; margin:0;
+    pointer-events:none; border-radius:10px; overflow:hidden;
+    border:1px solid var(--accent);
+    box-shadow:0 18px 44px rgba(0,0,0,.6), 0 0 0 3px rgba(89,0,255,.35);
+    will-change:transform;
+  }
+  #lift img{ display:block; width:100%; height:100%; object-fit:cover; }
+
+  #empty{
+    border:1px dashed var(--line); border-radius:14px;
+    padding:40px 20px; text-align:center;
+  }
+  #empty p{ margin:0; font-size:13px; line-height:1.55; color:var(--dim); }
+  body.over #empty{ border-color:var(--accent); background:rgba(89,0,255,.08); }
+
+  #toast{
+    position:fixed; left:50%; bottom:calc(var(--bar) + 22px);
+    transform:translateX(-50%) translateY(8px);
+    background:#fff; color:#0B0B0D;
+    font-family:var(--mono); font-size:11px; letter-spacing:.05em;
+    padding:8px 14px; border-radius:8px;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:95;
+  }
+  #toast.on{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="bar" id="top">
+  <button class="btn primary" id="add">+ Attēli</button>
+  <div class="sel">
+    <select id="cols" aria-label="Kolonnu skaits">
+      <option value="1">1 × </option>
+      <option value="2" selected>2 × 2</option>
+      <option value="3">3 × 3</option>
+      <option value="4">4 × 4</option>
+      <option value="5">5 × 5</option>
+      <option value="6">6 × 6</option>
+    </select>
+  </div>
+  <button class="btn danger" id="del" disabled>Noņemt</button>
+  <span class="tally" id="tally">0</span>
+</div>
+
+<main>
+  <div id="empty"><p>Ievelc attēlus vai spied “+ Attēli”.<br>Turi pirkstu uz kartītes un velc, lai mainītu secību. Viens pieskāriens iezīmē.</p></div>
+  <div id="grid" role="list" aria-label="Attēlu režģis"></div>
+</main>
+
+<div class="bar" id="bot">
+  <span class="wordmark">GRIDPLAY</span><span class="credit">by Paula</span>
+  <button class="btn wide" id="export" disabled>Eksportēt secīgi</button>
+</div>
+
+<input type="file" id="file" accept="image/*" multiple hidden>
+<div id="toast" role="status"></div>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const grid  = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const tally = document.getElementById('tally');
+  const fileIn= document.getElementById('file');
+  const live  = document.getElementById('live');
+  const toastEl = document.getElementById('toast');
+  const delBtn  = document.getElementById('del');
+  const expBtn  = document.getElementById('export');
+
+  let items = [];        // { id, url, name, el, idxEl, picked }
+  let cols = 2, uid = 0;
+
+  const pad = n => String(n).padStart(2,'0');
+  let toastTimer;
+  function toast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('on'), 1700);
+  }
+
+  /* ---------- columns ---------- */
+  const colSel = document.getElementById('cols');
+  colSel.addEventListener('change', () => {
+    cols = +colSel.value;
+    flip(() => document.documentElement.style.setProperty('--cols', cols));
+  });
+  document.documentElement.style.setProperty('--cols', cols);
+
+  /* ---------- FLIP ---------- */
+  function flip(mutate, skip){
+    const before = new Map([...grid.children].map(el => [el, el.getBoundingClientRect()]));
+    mutate();
+    for (const el of grid.children){
+      if (el === skip) continue;
+      const b = before.get(el); if (!b) continue;
+      const a = el.getBoundingClientRect();
+      const dx = b.left - a.left, dy = b.top - a.top;
+      if (!dx && !dy) continue;
+      el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'none'}],
+                 {duration:200, easing:'cubic-bezier(.2,.8,.3,1)'});
+    }
+  }
+
+  /* ---------- cards ---------- */
+  function makeCard(item){
+    const card = document.createElement('div');
+    card.className = 'card'; card.setAttribute('role','listitem'); card.tabIndex = 0;
+
+    const img = document.createElement('img');
+    img.src = item.url; img.alt = item.name; img.draggable = false;
+
+    const idx = document.createElement('span');
+    idx.className = 'idx';
+
+    card.append(img, idx);
+    card.addEventListener('mousedown', onMouseDown);
+    card.addEventListener('touchstart', onTouchStart, {passive:true});
+    card.addEventListener('keydown', onKeyDown);
+    item.el = card; item.idxEl = idx;
+    return card;
+  }
+
+  function refresh(){
+    items.forEach((it,i) => {
+      it.idxEl.textContent = pad(i+1);
+      it.el.classList.toggle('picked', !!it.picked);
+    });
+    const n = items.length, p = items.filter(it => it.picked).length;
+    tally.textContent = p ? p + '/' + n : String(n);
+    empty.style.display = n ? 'none' : '';
+    delBtn.disabled = !p;
+    delBtn.textContent = p > 1 ? 'Noņemt ' + p : 'Noņemt';
+    expBtn.disabled = !n;
+  }
+
+  function paint(){ for (const it of items) grid.appendChild(it.el); refresh(); }
+
+  function add(files){
+    const imgs = [...files].filter(f => f.type.startsWith('image/'));
+    if (!imgs.length){ toast('Nav attēlu'); return; }
+    for (const f of imgs){
+      const item = { id:'i'+(++uid), url:URL.createObjectURL(f), name:f.name, picked:false };
+      items.push(item);
+      grid.appendChild(makeCard(item));
+    }
+    refresh();
+  }
+
+  function toggle(card){
+    const it = items.find(x => x.el === card); if (!it) return;
+    it.picked = !it.picked;
+    refresh();
+  }
+
+  delBtn.addEventListener('click', () => {
+    const gone = items.filter(it => it.picked);
+    if (!gone.length) return;
+    flip(() => {
+      gone.forEach(it => { it.el.remove(); URL.revokeObjectURL(it.url); });
+      items = items.filter(it => !it.picked);
+      refresh();
+    });
+    toast(gone.length + ' noņemti');
+  });
+
+  /* ---------- files ---------- */
+  document.getElementById('add').addEventListener('click', () => fileIn.click());
+  fileIn.addEventListener('change', () => { add(fileIn.files); fileIn.value = ''; });
+
+  let overDepth = 0;
+  addEventListener('dragenter', e => { e.preventDefault(); overDepth++; document.body.classList.add('over'); });
+  addEventListener('dragover', e => e.preventDefault());
+  addEventListener('dragleave', () => { if (--overDepth <= 0) document.body.classList.remove('over'); });
+  addEventListener('drop', e => {
+    e.preventDefault(); overDepth = 0; document.body.classList.remove('over');
+    if (e.dataTransfer && e.dataTransfer.files.length) add(e.dataTransfer.files);
+  });
+
+  /* ---------- export ---------- */
+  expBtn.addEventListener('click', () => {
+    expBtn.disabled = true;
+    items.forEach((it,i) => setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = it.url;
+      a.download = String(i+1).padStart(3,'0') + '_' + it.name;
+      document.body.appendChild(a); a.click(); a.remove();
+    }, i * 220));
+    setTimeout(() => { expBtn.disabled = false; toast('Eksportēts'); }, items.length * 220 + 200);
+  });
+
+  /* ---------- drag to reorder ---------- */
+  let drag = null, holdTimer = null, pending = null, moved = false;
+  const HOLD = 260;
+
+  const idxOf = card => items.findIndex(it => it.el === card);
+
+  function startDrag(card, x, y){
+    const i = idxOf(card); if (i < 0) return;
+    const r = card.getBoundingClientRect();
+    const lift = document.createElement('div');
+    lift.id = 'lift';
+    lift.style.width = r.width + 'px';
+    lift.style.height = r.height + 'px';
+    const im = document.createElement('img'); im.src = items[i].url; lift.appendChild(im);
+    document.body.appendChild(lift);
+    drag = { item:items[i], lift, ox:x - r.left, oy:y - r.top };
+    card.classList.add('held');
+    document.body.classList.add('dragging');
+    moveLift(x,y);
+    if (navigator.vibrate) navigator.vibrate(12);
+  }
+  function moveLift(x,y){
+    drag.lift.style.transform =
+      `translate(${x-drag.ox}px, ${y-drag.oy}px) scale(1.05) rotate(-1.6deg)`;
+  }
+  function moveDrag(x,y){
+    moveLift(x,y);
+    let best = -1, bestD = Infinity;
+    items.forEach((it,i) => {
+      const r = it.el.getBoundingClientRect();
+      const dx = x - (r.left + r.width/2), dy = y - (r.top + r.height/2);
+      const d = dx*dx + dy*dy;
+      if (d < bestD){ bestD = d; best = i; }
+    });
+    const cur = idxOf(drag.item.el);
+    if (best >= 0 && best !== cur){
+      flip(() => {
+        items.splice(cur,1);
+        items.splice(best,0,drag.item);
+        paint();
+      }, drag.item.el);
+    }
+  }
+  function endDrag(){
+    if (!drag) return;
+    const card = drag.item.el;
+    const r = card.getBoundingClientRect(), lift = drag.lift;
+    lift.style.transition = 'transform .18s cubic-bezier(.2,.8,.3,1), opacity .18s';
+    lift.style.transform = `translate(${r.left}px, ${r.top}px) scale(1) rotate(0deg)`;
+    lift.style.opacity = '0';
+    setTimeout(() => lift.remove(), 190);
+    card.classList.remove('held');
+    document.body.classList.remove('dragging');
+    live.textContent = (idxOf(card)+1) + '. vieta';
+    drag = null;
+  }
+  function clearPending(){ clearTimeout(holdTimer); holdTimer = null; pending = null; }
+
+  /* mouse */
+  function onMouseDown(e){
+    if (e.button !== 0) return;
+    e.preventDefault();
+    pending = { card:e.currentTarget, x:e.clientX, y:e.clientY };
+    moved = false;
+  }
+  addEventListener('mousemove', e => {
+    if (pending && !drag){
+      if (Math.hypot(e.clientX-pending.x, e.clientY-pending.y) > 4){
+        moved = true; startDrag(pending.card, e.clientX, e.clientY); pending = null;
+      }
+      return;
+    }
+    if (drag) moveDrag(e.clientX, e.clientY);
+  });
+  addEventListener('mouseup', () => {
+    if (pending && !drag && !moved) toggle(pending.card);
+    clearPending(); endDrag();
+  });
+
+  /* touch */
+  function onTouchStart(e){
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    pending = { card:e.currentTarget, x:t.clientX, y:t.clientY };
+    moved = false;
+    holdTimer = setTimeout(() => {
+      if (pending){ startDrag(pending.card, pending.x, pending.y); pending = null; }
+    }, HOLD);
+  }
+  addEventListener('touchmove', e => {
+    const t = e.touches[0]; if (!t) return;
+    if (pending && !drag){
+      if (Math.hypot(t.clientX-pending.x, t.clientY-pending.y) > 10){ moved = true; clearPending(); }
+      return;
+    }
+    if (drag){ e.preventDefault(); moveDrag(t.clientX, t.clientY); }
+  }, {passive:false});
+  addEventListener('touchend', () => {
+    if (pending && !drag && !moved) toggle(pending.card);
+    clearPending(); endDrag();
+  });
+  addEventListener('touchcancel', () => { clearPending(); endDrag(); });
+
+  /* keyboard */
+  function onKeyDown(e){
+    if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); toggle(e.currentTarget); return; }
+    const map = { ArrowLeft:-1, ArrowRight:1, ArrowUp:-cols, ArrowDown:cols };
+    const step = map[e.key]; if (step === undefined) return;
+    const card = e.currentTarget, from = idxOf(card);
+    const to = Math.max(0, Math.min(items.length-1, from+step));
+    if (to === from) return;
+    e.preventDefault();
+    flip(() => { const [it] = items.splice(from,1); items.splice(to,0,it); paint(); });
+    card.focus();
+    live.textContent = (to+1) + '. vieta';
+  }
+
+  refresh();
+})();
+</script>
+</body>
+</html>
