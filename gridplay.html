@@ -15,6 +15,7 @@
     --cols:2;
     --gap:8px;
     --bar:54px;
+    --dwell:380ms;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   }
@@ -95,6 +96,7 @@
     display:grid;
     grid-template-columns:repeat(var(--cols), minmax(0,1fr));
     gap:var(--gap);
+    overflow-anchor:none;
   }
   .card{
     position:relative; aspect-ratio:1/1;
@@ -114,8 +116,30 @@
   }
   .card.picked{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
   .card.picked .idx{ background:var(--accent); box-shadow:none; }
+
+  /* explicit tap target for selecting */
+  .mark{
+    position:absolute; right:6px; top:6px;
+    width:24px; height:24px; padding:0; border-radius:50%;
+    border:2px solid rgba(255,255,255,.9);
+    background:rgba(11,11,13,.45); backdrop-filter:blur(4px);
+    display:grid; place-items:center;
+    font-size:12px; line-height:1; color:transparent;
+    cursor:pointer; z-index:2;
+  }
+  .mark::before{ content:""; position:absolute; inset:-11px; }  /* 46px hit area */
+  .card.picked .mark{ background:var(--accent); border-color:var(--accent); color:#fff; }
   .card.held{ opacity:.2; outline:2px dashed var(--accent); outline-offset:-2px; }
   .card.held img{ visibility:hidden; }
+
+  /* where the card will land once you hold still long enough */
+  .card.target{ outline:2px solid rgba(89,0,255,.6); outline-offset:-2px; }
+  .card.target::after{
+    content:""; position:absolute; left:0; bottom:0; height:3px; width:0;
+    background:var(--accent);
+    animation:fillbar var(--dwell) linear forwards;
+  }
+  @keyframes fillbar{ to{ width:100%; } }
 
   #lift{
     position:fixed; top:0; left:0; z-index:90; margin:0;
@@ -165,7 +189,7 @@
 </div>
 
 <main>
-  <div id="empty"><p>Ievelc attēlus vai spied “+ Attēli”.<br>Turi pirkstu uz kartītes un velc, lai mainītu secību. Viens pieskāriens iezīmē.</p></div>
+  <div id="empty"><p>Ievelc attēlus vai spied “+ Attēli”.<br>Turi pirkstu uz kartītes un velc, lai mainītu secību. Aplītis stūrī iezīmē attēlu.</p></div>
   <div id="grid" role="list" aria-label="Attēlu režģis"></div>
 </main>
 
@@ -236,7 +260,16 @@
     const idx = document.createElement('span');
     idx.className = 'idx';
 
-    card.append(img, idx);
+    const mark = document.createElement('button');
+    mark.className = 'mark'; mark.type = 'button';
+    mark.textContent = '✓';
+    mark.setAttribute('aria-label', 'Iezīmēt ' + item.name);
+    // never let the circle start a drag
+    ['mousedown','touchstart','pointerdown'].forEach(ev =>
+      mark.addEventListener(ev, e => e.stopPropagation(), {passive:true}));
+    mark.addEventListener('click', e => { e.stopPropagation(); toggle(card); });
+
+    card.append(img, idx, mark);
     card.addEventListener('mousedown', onMouseDown);
     card.addEventListener('touchstart', onTouchStart, {passive:true});
     card.addEventListener('keydown', onKeyDown);
@@ -313,8 +346,13 @@
   });
 
   /* ---------- drag to reorder ---------- */
+  /* Tune these three: */
+  const HOLD   = 260;   // ms to hold before a card lifts
+  const DWELL  = 380;   // ms to hover over a slot before cards shift
+  const SCROLL = 6;     // max px per frame at the very edge of the screen
+
   let drag = null, holdTimer = null, pending = null, moved = false;
-  const HOLD = 260;
+  let raf = 0, hoverIdx = -1, hoverAt = 0;
 
   const idxOf = card => items.findIndex(it => it.el === card);
 
@@ -327,18 +365,26 @@
     lift.style.height = r.height + 'px';
     const im = document.createElement('img'); im.src = items[i].url; lift.appendChild(im);
     document.body.appendChild(lift);
-    drag = { item:items[i], lift, ox:x - r.left, oy:y - r.top };
+    drag = { item:items[i], lift, ox:x - r.left, oy:y - r.top, x, y, sx:x, sy:y, didMove:false };
     card.classList.add('held');
     document.body.classList.add('dragging');
     moveLift(x,y);
     if (navigator.vibrate) navigator.vibrate(12);
+    raf = requestAnimationFrame(tick);
   }
+
   function moveLift(x,y){
     drag.lift.style.transform =
       `translate(${x-drag.ox}px, ${y-drag.oy}px) scale(1.05) rotate(-1.6deg)`;
   }
+
   function moveDrag(x,y){
+    drag.x = x; drag.y = y;
     moveLift(x,y);
+  }
+
+  /* nearest card centre to the finger */
+  function targetIndex(x,y){
     let best = -1, bestD = Infinity;
     items.forEach((it,i) => {
       const r = it.el.getBoundingClientRect();
@@ -346,17 +392,69 @@
       const d = dx*dx + dy*dy;
       if (d < bestD){ bestD = d; best = i; }
     });
-    const cur = idxOf(drag.item.el);
-    if (best >= 0 && best !== cur){
-      flip(() => {
-        items.splice(cur,1);
-        items.splice(best,0,drag.item);
-        paint();
-      }, drag.item.el);
-    }
+    return best;
   }
+
+  function markTarget(i){
+    if (hoverIdx === i) return;
+    if (items[hoverIdx]) items[hoverIdx].el.classList.remove('target');
+    hoverIdx = i;
+    hoverAt = performance.now();
+    if (items[i]) items[i].el.classList.add('target');
+  }
+  function clearTarget(){
+    if (items[hoverIdx]) items[hoverIdx].el.classList.remove('target');
+    hoverIdx = -1;
+  }
+
+  function commitMove(from, to){
+    const el = drag.item.el;
+    drag.didMove = true;
+    flip(() => {
+      items.splice(from, 1);
+      items.splice(to, 0, drag.item);
+      const after = items[to + 1];
+      grid.insertBefore(el, after ? after.el : null);   // move one node, not all
+      refresh();
+    }, el);
+    if (navigator.vibrate) navigator.vibrate(8);
+  }
+
+  /* per-frame: edge scrolling + dwell check */
+  function tick(){
+    if (!drag) return;
+    const topEdge = document.getElementById('top').getBoundingClientRect().bottom;
+    const botEdge = document.getElementById('bot').getBoundingClientRect().top;
+    const zone = Math.max(60, (botEdge - topEdge) / 3);   // upper third / middle / lower third
+
+    let v = 0;
+    if (drag.y < topEdge + zone){
+      const t = Math.min(1, (topEdge + zone - drag.y) / zone);
+      v = -SCROLL * t * t;                                // eases in — barely creeps near the middle
+    } else if (drag.y > botEdge - zone){
+      const t = Math.min(1, (drag.y - (botEdge - zone)) / zone);
+      v = SCROLL * t * t;
+    }
+    if (v) window.scrollBy(0, v);
+
+    const cur = idxOf(drag.item.el);
+    const cand = targetIndex(drag.x, drag.y);
+    if (cand < 0 || cand === cur){
+      clearTarget();
+    } else {
+      markTarget(cand);
+      if (performance.now() - hoverAt >= DWELL){
+        clearTarget();
+        commitMove(cur, cand);
+      }
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
   function endDrag(){
     if (!drag) return;
+    cancelAnimationFrame(raf); raf = 0;
+    clearTarget();
     const card = drag.item.el;
     const r = card.getBoundingClientRect(), lift = drag.lift;
     lift.style.transition = 'transform .18s cubic-bezier(.2,.8,.3,1), opacity .18s';
@@ -365,8 +463,11 @@
     setTimeout(() => lift.remove(), 190);
     card.classList.remove('held');
     document.body.classList.remove('dragging');
+    // held the card but never moved it → they meant to select, not to drag
+    const stayed = !drag.didMove && Math.hypot(drag.x - drag.sx, drag.y - drag.sy) < 14;
     live.textContent = (idxOf(card)+1) + '. vieta';
     drag = null;
+    if (stayed) toggle(card);
   }
   function clearPending(){ clearTimeout(holdTimer); holdTimer = null; pending = null; }
 
