@@ -192,7 +192,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{
 
 /* ---------- stage ---------- */
 #stage{
-  grid-area:stage;
+  grid-area:stage;touch-action:none;
   display:flex;align-items:center;justify-content:center;
   padding:22px;min-width:0;min-height:0;
   background:
@@ -277,20 +277,57 @@ button:focus-visible,select:focus-visible,input:focus-visible{
   *{animation:none !important;transition:none !important;}
 }
 
-/* ---------- additions: shapes, layers, hints ---------- */
+/* ---------- additions: tools, options, layers, search ---------- */
+.headact{display:flex;gap:6px;margin-left:16px;align-self:center;}
+.headact button{padding:8px 12px;}
+.primary,.headact .primary{background:var(--violet);border-color:var(--violet);}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.tools button{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 2px 8px;font-size:10.5px;}
+.tools button span{font-size:19px;line-height:1;}
+[data-for][hidden]{display:none !important;}
 .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
 .seg3 button{padding:9px 4px;font-size:11px;}
-.quad{display:grid;grid-template-columns:1.2fr 1.2fr .8fr .8fr;gap:6px;}
+.quad{display:grid;grid-template-columns:1.3fr 1.3fr .7fr .7fr;gap:5px;}
+.quad button{padding:9px 4px;white-space:nowrap;}
 .hint{color:var(--muted);font-size:11px;line-height:1.4;margin-top:9px;}
+.hint:empty{display:none;}
+.colorblk{margin-top:4px;}
 button:disabled{opacity:.4;cursor:default;}
 button:disabled:hover{border-color:var(--line);}
+details.more{margin-top:4px;}
+details.more summary{color:var(--muted);font-size:11px;cursor:pointer;padding:4px 0 10px;}
+details.fold > summary{list-style:none;cursor:pointer;}
+details.fold > summary::-webkit-details-marker{display:none;}
+details.fold > summary h2{display:flex;align-items:center;gap:8px;margin:0;}
+details.fold > summary h2::after{content:"▸";margin-left:auto;color:var(--muted);font-size:12px;transition:transform .15s;}
+details.fold[open] > summary h2::after{transform:rotate(90deg);}
+details.fold[open] > summary{margin-bottom:11px;}
+.badge{font:700 9px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#fff;background:var(--violet);border-radius:9px;padding:3px 6px;}
+.badge:empty{display:none;}
 .layers{display:grid;gap:4px;margin-bottom:8px;}
 .lrow{display:flex;gap:4px;}
 .lrow .eye{flex:0 0 34px;padding:7px 0;font-size:13px;}
 .lrow .eye[aria-pressed="true"]{background:var(--panel-2);border-color:var(--line);}
 .lrow .eye[aria-pressed="false"]{opacity:.5;}
 .lrow .lname{flex:1;text-align:left;padding:8px 10px;}
-@media (max-width:900px){ #bar{grid-template-columns:repeat(4,1fr) !important;} }
+.search{margin:10px 0 7px;}
+.search input{
+  width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+  border-radius:8px;padding:9px 11px;font:500 13px/1 inherit;outline:none;
+}
+.search input:focus{border-color:var(--violet-soft);}
+.sortrow{margin:0;}
+#results,#colorPalette{padding:12px 16px;}
+#results .none{color:var(--muted);font-size:12px;}
+#tools2{display:none;}
+@media (max-width:900px){
+  .headact,#toolSect{display:none;}
+  #strip{gap:5px !important;padding:8px 10px !important;}
+  #tools2{display:flex;gap:4px;flex:1 1 auto;}
+  #tools2 button{flex:1 1 0;min-width:0;padding:7px 0;font-size:17px;line-height:1;}
+  #strip .sheetbtn{flex:0 0 auto;padding:8px 9px;font-size:12px;}
+  #bar{grid-template-columns:1fr 1fr 1.3fr !important;}
+}
 </style>
 </head>
 <body>
@@ -300,111 +337,117 @@ button:disabled:hover{border-color:var(--line);}
     <span class="wordmark">EMOJIPLAY</span>
     <span class="tagline">emoji drawing tool</span>
     <span class="byline" id="byline">made by Paula Dejus</span>
+    <div class="headact">
+      <button id="undo" title="Undo (Ctrl+Z)">↶ Undo</button>
+      <button id="redo" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+      <button id="export" class="primary">Export</button>
+    </div>
   </header>
 
   <nav id="strip">
-    <button data-sheet="left">Tools</button>
-    <button data-sheet="right">Emoji</button>
+    <div class="tools mini" id="tools2"></div>
+    <button data-sheet="left" class="sheetbtn">⚙︎ Options</button>
+    <button data-sheet="right" class="sheetbtn">😀 Emoji</button>
   </nav>
 
   <aside id="left">
-    <div class="sect" data-tint="1">
-      <h2>Mode</h2>
-      <div class="seg">
-        <button data-mode="draw" aria-pressed="true">Draw</button>
-        <button data-mode="stamp" aria-pressed="false">Stamp</button>
-        <button data-mode="brush" aria-pressed="false">Emoji brush</button>
-        <button data-mode="shape" aria-pressed="false">Shape</button>
-        <button data-mode="fill" aria-pressed="false">Fill</button>
-        <button data-mode="erase" aria-pressed="false">Erase</button>
-      </div>
-      <div class="row" style="margin-top:11px">
-        <label for="tol">Tolerance</label>
-        <input type="range" id="tol" min="0" max="180" value="40" />
-        <span class="val" id="tolVal">40</span>
+    <div class="sect" data-tint="1" id="toolSect">
+      <h2>Tool</h2>
+      <div class="tools" id="tools">
+        <button data-mode="draw" aria-pressed="true"><span>✏️</span>Draw</button>
+        <button data-mode="emoji" aria-pressed="false"><span>😀</span>Emoji</button>
+        <button data-mode="shape" aria-pressed="false"><span>🔷</span>Shape</button>
+        <button data-mode="fill" aria-pressed="false"><span>🪣</span>Fill</button>
+        <button data-mode="erase" aria-pressed="false"><span>🧽</span>Erase</button>
       </div>
     </div>
 
-    <div class="sect" data-tint="2">
-      <h2>Brush</h2>
-      <div class="row">
-        <label for="brushColor">Color</label>
-        <input type="color" id="brushColor" value="#5900FF" />
-        <span class="val" id="brushHex">5900FF</span>
+    <!-- options: each block shows only for the tools listed in data-for -->
+    <div class="sect" data-tint="2" id="opts">
+      <h2 id="optsTitle">Draw options</h2>
+
+      <div data-for="shape">
+        <div class="seg3">
+          <button data-shape="rect" aria-pressed="true" title="Rectangle">▭ Rect</button>
+          <button data-shape="ellipse" aria-pressed="false" title="Ellipse">◯ Oval</button>
+          <button data-shape="triangle" aria-pressed="false" title="Triangle">△ Tri</button>
+          <button data-shape="line" aria-pressed="false" title="Line">╱ Line</button>
+          <button data-shape="star" aria-pressed="false" title="Star">☆ Star</button>
+          <button data-shape="heart" aria-pressed="false" title="Heart">♡ Heart</button>
+        </div>
+        <div class="pair" style="margin:7px 0 11px">
+          <button id="shapeOutline" aria-pressed="true">Outline</button>
+          <button id="shapeFill" aria-pressed="false">Filled</button>
+        </div>
       </div>
-      <div class="swatches" id="swatches"></div>
-      <div class="row" style="margin-top:11px">
+
+      <div data-for="draw shape erase" class="row">
         <label for="thick">Size</label>
         <input type="range" id="thick" min="1" max="80" value="6" />
         <span class="val" id="thickVal">6</span>
       </div>
+
+      <div data-for="emoji">
+        <div class="row">
+          <label for="emSize">Size</label>
+          <input type="range" id="emSize" min="10" max="400" value="80" />
+          <span class="val" id="emSizeVal">80</span>
+        </div>
+        <div class="row">
+          <label for="spacing">Spacing</label>
+          <input type="range" id="spacing" min="10" max="300" value="80" />
+          <span class="val" id="spacingVal">80</span>
+        </div>
+        <details class="more">
+          <summary>More emoji options</summary>
+          <div class="row">
+            <label for="scatter">Scatter</label>
+            <input type="range" id="scatter" min="0" max="200" value="0" />
+            <span class="val" id="scatterVal">0</span>
+          </div>
+          <div class="row">
+            <label for="sizeJit">Size mix</label>
+            <input type="range" id="sizeJit" min="0" max="90" value="0" />
+            <span class="val" id="sizeJitVal">0</span>
+          </div>
+          <div class="row">
+            <label for="turnJit">Wobble</label>
+            <input type="range" id="turnJit" min="0" max="180" value="0" />
+            <span class="val" id="turnJitVal">0</span>
+          </div>
+          <div class="pair" style="margin-bottom:7px">
+            <button id="spin" aria-pressed="false">Spin</button>
+            <button id="follow" aria-pressed="false">Follow line</button>
+            <button data-flip="x" aria-pressed="false">Flip ↔</button>
+            <button data-flip="y" aria-pressed="false">Flip ↕</button>
+          </div>
+          <div class="stack"><button id="mix" aria-pressed="false">Mix recent emoji</button></div>
+        </details>
+      </div>
+
+      <div data-for="fill" class="row">
+        <label for="tol">Tolerance</label>
+        <input type="range" id="tol" min="0" max="180" value="40" />
+        <span class="val" id="tolVal">40</span>
+      </div>
+
+      <div data-for="draw shape fill" class="colorblk">
+        <div class="row">
+          <label for="brushColor">Color</label>
+          <input type="color" id="brushColor" value="#5900FF" />
+          <span class="val" id="brushHex">5900FF</span>
+        </div>
+        <div class="swatches" id="swatches"></div>
+      </div>
+
+      <div class="hint" id="toolHint"></div>
     </div>
 
-    <div class="sect" data-tint="5">
-      <h2>Shape</h2>
-      <div class="seg3">
-        <button data-shape="rect" aria-pressed="true" title="Rectangle">▭ Rect</button>
-        <button data-shape="ellipse" aria-pressed="false" title="Ellipse">◯ Oval</button>
-        <button data-shape="triangle" aria-pressed="false" title="Triangle">△ Tri</button>
-        <button data-shape="line" aria-pressed="false" title="Line">╱ Line</button>
-        <button data-shape="star" aria-pressed="false" title="Star">☆ Star</button>
-        <button data-shape="heart" aria-pressed="false" title="Heart">♡ Heart</button>
-      </div>
-      <div class="stack" style="margin-top:7px">
-        <button id="shapeFill" aria-pressed="false">Filled shape</button>
-      </div>
-      <div class="hint">Drag to draw. Shift keeps it even. Outline uses the brush size, so you can fill it with the bucket.</div>
-    </div>
-
-    <div class="sect" data-tint="3">
-      <h2>Stamp</h2>
-      <div class="row">
-        <label for="emSize">Size</label>
-        <input type="range" id="emSize" min="10" max="400" value="80" />
-        <span class="val" id="emSizeVal">80</span>
-      </div>
-      <div class="row">
-        <label for="scatter">Scatter</label>
-        <input type="range" id="scatter" min="0" max="200" value="0" />
-        <span class="val" id="scatterVal">0</span>
-      </div>
-      <div class="pair" style="margin-bottom:7px">
-        <button data-flip="x" aria-pressed="false">Flip ↔</button>
-        <button data-flip="y" aria-pressed="false">Flip ↕</button>
-      </div>
-      <div class="stack">
-        <button id="spin" aria-pressed="false">Random rotation</button>
-      </div>
-    </div>
-
-    <div class="sect" data-tint="4">
-      <h2>Emoji brush</h2>
-      <div class="row">
-        <label for="spacing">Spacing</label>
-        <input type="range" id="spacing" min="10" max="300" value="60" />
-        <span class="val" id="spacingVal">60</span>
-      </div>
-      <div class="row">
-        <label for="sizeJit">Size mix</label>
-        <input type="range" id="sizeJit" min="0" max="90" value="30" />
-        <span class="val" id="sizeJitVal">30</span>
-      </div>
-      <div class="row">
-        <label for="turnJit">Wobble</label>
-        <input type="range" id="turnJit" min="0" max="180" value="20" />
-        <span class="val" id="turnJitVal">20</span>
-      </div>
+    <details class="sect fold" data-tint="6" id="symFold">
+      <summary><h2>Symmetry <span class="badge" id="symBadge"></span></h2></summary>
       <div class="pair">
-        <button id="follow" aria-pressed="false">Follow line</button>
-        <button id="mix" aria-pressed="false">Mix recent</button>
-      </div>
-    </div>
-
-    <div class="sect" data-tint="6">
-      <h2>Symmetry</h2>
-      <div class="pair">
-        <button data-mirror="x" aria-pressed="false">Mirror X</button>
-        <button data-mirror="y" aria-pressed="false">Mirror Y</button>
+        <button data-mirror="x" aria-pressed="false">Mirror ↔</button>
+        <button data-mirror="y" aria-pressed="false">Mirror ↕</button>
       </div>
       <div class="row" style="margin-top:10px">
         <label for="radial">Radial</label>
@@ -419,11 +462,11 @@ button:disabled:hover{border-color:var(--line);}
           <option value="16">16 rays</option>
         </select>
       </div>
-      <div class="hint">Radial + Mirror X = kaleidoscope.</div>
-    </div>
+      <div class="hint">Radial + Mirror ↔ = kaleidoscope.</div>
+    </details>
 
-    <div class="sect" data-tint="1">
-      <h2>Layers</h2>
+    <details class="sect fold" data-tint="4" open>
+      <summary><h2>Layers</h2></summary>
       <div class="layers" id="layers"></div>
       <div class="quad">
         <button id="addLayer" title="New layer">+ New</button>
@@ -431,12 +474,15 @@ button:disabled:hover{border-color:var(--line);}
         <button id="upLayer" title="Move layer up">↑</button>
         <button id="downLayer" title="Move layer down">↓</button>
       </div>
-    </div>
+      <div class="stack" style="margin-top:7px">
+        <button id="clear" class="danger">Clear this layer</button>
+      </div>
+    </details>
 
-    <div class="sect" data-tint="2">
-      <h2>Canvas</h2>
+    <details class="sect fold" data-tint="5">
+      <summary><h2>Canvas &amp; export</h2></summary>
       <div class="row">
-        <label for="shape">Shape</label>
+        <label for="shape">Size</label>
         <select id="shape">
           <option value="1024x1024">Square 1024</option>
           <option value="512x512">Square 512</option>
@@ -453,51 +499,53 @@ button:disabled:hover{border-color:var(--line);}
       <div class="stack">
         <button id="transparent" aria-pressed="true">Transparent paper</button>
       </div>
-    </div>
-
-    <div class="sect" data-tint="3">
-      <h2>Canvas actions</h2>
+      <div class="row" style="margin-top:12px">
+        <label>Export</label>
+        <select id="exportFmt" aria-label="Export format">
+          <option value="png">PNG</option>
+          <option value="jpg">JPG</option>
+        </select>
+        <select id="exportScale" aria-label="Export size">
+          <option value="1">1×</option>
+          <option value="2">2×</option>
+        </select>
+      </div>
       <div class="stack">
-        <div class="pair">
-          <button id="undo" title="Ctrl+Z">Undo</button>
-          <button id="redo" title="Ctrl+Shift+Z / Ctrl+Y">Redo</button>
-        </div>
         <button id="surprise">Surprise me ✨</button>
-        <button id="clear" class="danger">Clear layer</button>
         <button id="newDrawing" class="danger">New drawing</button>
-        <div class="pair">
-          <select id="exportFmt" aria-label="Export format">
-            <option value="png">PNG</option>
-            <option value="jpg">JPG</option>
-          </select>
-          <select id="exportScale" aria-label="Export size">
-            <option value="1">1× size</option>
-            <option value="2">2× size</option>
-          </select>
-        </div>
-        <button id="export" style="background:var(--violet);border-color:var(--violet)">Export</button>
       </div>
       <div class="hint" id="saved">Autosave on: your drawing stays after reload.</div>
-    </div>
+    </details>
   </aside>
 
   <main id="stage"><div id="frame"></div></main>
 
   <aside id="right">
     <div class="sect" data-tint="1">
-      <h2>Selected</h2>
       <div id="current"><span class="big">☀️</span><span class="lbl">tap any emoji below</span></div>
+      <div class="search">
+        <input type="search" id="search" placeholder="Search emoji… (cat, kaķis, heart)" autocomplete="off" />
+      </div>
+      <div class="row sortrow">
+        <label for="sort">Order</label>
+        <select id="sort">
+          <option value="theme">By theme</option>
+          <option value="color">By color 🌈</option>
+          <option value="name">By name A–Z</option>
+          <option value="new">Newest first</option>
+        </select>
+      </div>
       <h2 style="margin:13px 0 8px">Recent</h2>
       <div class="grid" id="recent"></div>
     </div>
     <div id="chips"></div>
+    <div id="results" hidden></div>
     <div id="palette"></div>
   </aside>
 
   <nav id="bar">
-    <button id="undo2">Undo</button>
-    <button id="redo2">Redo</button>
-    <button id="clear2" class="danger">Clear</button>
+    <button id="undo2">↶ Undo</button>
+    <button id="redo2">↷ Redo</button>
     <button id="export2" class="export">Export</button>
   </nav>
 </div>
@@ -568,9 +616,10 @@ const state = {
   radial:1,
   shape:'rect',
   shapeFill:false,
-  spacing:60,
-  sizeJit:30,
-  turnJit:20,
+  spacing:80,
+  sizeJit:0,
+  turnJit:0,
+  sort:'theme',
   follow:false,
   mix:false,
   transparent:true,
@@ -584,7 +633,7 @@ const state = {
 // settings that survive a reload
 const SAVED_KEYS = ['mode','color','thickness','emojiSize','scatter','tolerance','spin','flipX','flipY',
   'mirrorX','mirrorY','radial','shape','shapeFill','spacing','sizeJit','turnJit','follow','mix','emoji',
-  'exportFmt','exportScale'];
+  'exportFmt','exportScale','sort'];
 
 let bgLayer;              // paper colour only
 let layers = [];          // {name, g, visible} — bottom first
@@ -612,7 +661,7 @@ function setup(){
   canvasElt = c.elt;
   pixelDensity(1);
   buildLayers();
-  attachPointer(c.elt);
+  attachPointer($('#stage'));   // the whole stage, so a shape can start or end past the canvas edge
   sizeFrame();
   loadSaved();
 }
@@ -705,7 +754,7 @@ function drawPreview(){
   }
   if (!hover) return;
 
-  if (state.mode === 'stamp' || state.mode === 'brush'){
+  if (state.mode === 'emoji'){
     push();
     drawingContext.globalAlpha = 0.5;
     noStroke();
@@ -762,7 +811,7 @@ function pinchMid(){
   return {x:(p[0].x + p[1].x) / 2, y:(p[0].y + p[1].y) / 2};
 }
 
-const usesEmojiSize = () => state.mode === 'stamp' || state.mode === 'brush';
+const usesEmojiSize = () => state.mode === 'emoji';
 
 function startPinch(){
   // a pinch is not a drawing gesture — roll back the mark the first finger made
@@ -801,8 +850,7 @@ function attachPointer(el){
       shapeDrag = {a: p, b: p, shift: e.shiftKey};
     } else {
       pushHistory();
-      if (state.mode === 'stamp') stampAt(p);
-      else if (state.mode === 'brush'){ brushCarry = 0; brushEmoji(p, 0); }
+      if (state.mode === 'emoji'){ brushCarry = 0; brushEmoji(p, 0); }
       else if (state.mode === 'fill') fillAt(p);
       else strokeSeg(p, p);
     }
@@ -819,10 +867,7 @@ function attachPointer(el){
     if (!pointerDown || state.mode === 'fill') return;
     if (state.mode === 'shape'){
       if (shapeDrag){ shapeDrag.b = p; shapeDrag.shift = e.shiftKey; }
-    } else if (state.mode === 'stamp'){
-      const gap = Math.max(6, state.emojiSize * 0.42);
-      if (!lastStamp || dist(p.x, p.y, lastStamp.x, lastStamp.y) > gap) stampAt(p);
-    } else if (state.mode === 'brush'){
+    } else if (state.mode === 'emoji'){
       brushTo(prev, p);
     } else {
       strokeSeg(prev, p);
@@ -910,12 +955,6 @@ function jitter(p){
   return {x: p.x + random(-state.scatter, state.scatter), y: p.y + random(-state.scatter, state.scatter)};
 }
 
-function stampAt(p){
-  lastStamp = p;
-  drawEmoji(cur().g, state.emoji, jitter(p), state.emojiSize,
-            state.spin ? random(TWO_PI) : 0, state.flipX, state.flipY);
-}
-
 /* Emoji brush: emoji laid along the path at an even spacing, each a little different. */
 function brushEmoji(p, dirAngle){
   const em = (state.mix && recentList.length > 1) ? random(recentList) : state.emoji;
@@ -958,6 +997,13 @@ function shapePoints(a, b, even){
       x1 = x0 + (dx < 0 ? -s : s); y1 = y0 + (dy < 0 ? -s : s);
     }
   }
+  // Near the canvas edge (or past it) a shape snaps to the edge, so a fill or
+  // frame reaches it cleanly — on a phone your finger can't land on the last pixel.
+  const W = state.W, H = state.H, near = Math.min(W, H) * 0.03;
+  const out = (state.shapeFill && type !== 'line') ? 2 : -state.thickness / 2;
+  const sx = v => v < near ? -out : v > W - near ? W + out : v;
+  const sy = v => v < near ? -out : v > H - near ? H + out : v;
+  x0 = sx(x0); x1 = sx(x1); y0 = sy(y0); y1 = sy(y1);
   if (type === 'line') return {pts: [{x:x0, y:y0}, {x:x1, y:y1}], closed: false};
 
   const l = Math.min(x0, x1), r = Math.max(x0, x1), t = Math.min(y0, y1), bt = Math.max(y0, y1);
@@ -1386,9 +1432,32 @@ async function loadSaved(){
 /* -------------- UI wiring -------------- */
 function press(btn, on){ btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
 
+const TOOL_INFO = {
+  draw:  ['Draw options',  'Drag to draw. Scroll or pinch to change the size.'],
+  emoji: ['Emoji options', 'Tap to place one emoji, drag to paint a trail. Pick emoji on the right.'],
+  shape: ['Shape options', 'Drag to draw — you can start or end outside the canvas. Near the edge it snaps to the edge. Shift keeps it even.'],
+  fill:  ['Fill options',  'Tap inside a closed area to fill it on the current layer.'],
+  erase: ['Eraser options','Drag to erase on the current layer.']
+};
+// mobile toolbar: icon-only copies of the tool buttons
+document.querySelectorAll('#tools [data-mode]').forEach(b => {
+  const c = document.createElement('button');
+  c.dataset.mode = b.dataset.mode;
+  c.title = b.textContent.trim().slice(2);
+  c.setAttribute('aria-label', c.title);
+  c.textContent = b.querySelector('span').textContent;
+  $('#tools2').appendChild(c);
+});
 function setMode(m){
+  if (m === 'stamp' || m === 'brush') m = 'emoji';   // older saves
+  if (!TOOL_INFO[m]) m = 'draw';
   state.mode = m;
   document.querySelectorAll('[data-mode]').forEach(o => press(o, o.dataset.mode === m));
+  document.querySelectorAll('#opts [data-for]').forEach(el => { el.hidden = !el.dataset.for.split(' ').includes(m); });
+  $('#optsTitle').textContent = TOOL_INFO[m][0];
+  $('#toolHint').textContent = TOOL_INFO[m][1];
+  const lbl = current.querySelector('.lbl');
+  if (lbl) lbl.textContent = m === 'emoji' ? 'tap or drag on the canvas' : 'tap any emoji to use it';
 }
 document.querySelectorAll('[data-mode]').forEach(b => {
   b.addEventListener('click', () => { setMode(b.dataset.mode); scheduleSave(); });
@@ -1401,6 +1470,9 @@ document.querySelectorAll('[data-shape]').forEach(b => {
     setMode('shape');
   });
 });
+function syncShapeFill(){ press($('#shapeFill'), state.shapeFill); press($('#shapeOutline'), !state.shapeFill); }
+$('#shapeFill').addEventListener('click', () => { state.shapeFill = true; syncShapeFill(); });
+$('#shapeOutline').addEventListener('click', () => { state.shapeFill = false; syncShapeFill(); });
 
 // brush colour
 const brushColor = $('#brushColor'), brushHex = $('#brushHex');
@@ -1438,15 +1510,23 @@ SLIDERS.forEach(([id, valId, key]) => {
 });
 
 // toggles
-const TOGGLES = [['#spin','spin'], ['#follow','follow'], ['#mix','mix'], ['#shapeFill','shapeFill'],
+const TOGGLES = [['#spin','spin'], ['#follow','follow'], ['#mix','mix'],
   ['[data-flip="x"]','flipX'], ['[data-flip="y"]','flipY'],
   ['[data-mirror="x"]','mirrorX'], ['[data-mirror="y"]','mirrorY']];
 TOGGLES.forEach(([sel, key]) => {
   const b = $(sel);
-  b.addEventListener('click', () => { state[key] = !state[key]; press(b, state[key]); });
+  b.addEventListener('click', () => { state[key] = !state[key]; press(b, state[key]); syncSym(); });
 });
 
-$('#radial').addEventListener('change', e => { state.radial = +e.target.value; });
+/* the folded Symmetry section says when something is on */
+function syncSym(){
+  const on = [];
+  if (state.mirrorX) on.push('↔');
+  if (state.mirrorY) on.push('↕');
+  if (state.radial > 1) on.push('✳' + state.radial);
+  $('#symBadge').textContent = on.join(' ');
+}
+$('#radial').addEventListener('change', e => { state.radial = +e.target.value; syncSym(); });
 $('#exportFmt').addEventListener('change', e => { state.exportFmt = e.target.value; });
 $('#exportScale').addEventListener('change', e => { state.exportScale = +e.target.value; });
 
@@ -1460,6 +1540,11 @@ function syncUI(){
   setColor(state.color);
   setMode(state.mode);
   document.querySelectorAll('[data-shape]').forEach(o => press(o, o.dataset.shape === state.shape));
+  syncShapeFill();
+  syncSym();
+  if (state.mirrorX || state.mirrorY || state.radial > 1) $('#symFold').open = true;
+  $('#sort').value = state.sort;
+  renderSort();
   bgColor.value = state.paper;
   press(transBtn, state.transparent);
   if (state.transparent) bgLayer.clear(); else bgLayer.background(state.paper);
@@ -1508,7 +1593,7 @@ $('#shape').addEventListener('change', e => {
 // actions
 ['#undo','#undo2'].forEach(s => $(s).addEventListener('click', undo));
 ['#redo','#redo2'].forEach(s => $(s).addEventListener('click', redo));
-['#clear','#clear2'].forEach(s => $(s).addEventListener('click', () => { pushHistory(); cur().g.clear(); }));
+['#clear'].forEach(s => $(s).addEventListener('click', () => { pushHistory(); cur().g.clear(); }));
 $('#newDrawing').addEventListener('click', () => {
   // one undo step brings the whole drawing back
   const ops = layers.map(l => ({type:'px', layer: l, img: snap(l.g)}));
@@ -1538,7 +1623,7 @@ function onKey(e){
 
   if (e.metaKey || e.ctrlKey) return;
 
-  const map = {d:'draw', s:'stamp', b:'brush', r:'shape', f:'fill', e:'erase'};
+  const map = {d:'draw', s:'emoji', b:'emoji', m:'emoji', r:'shape', f:'fill', e:'erase'};
   if (map[k]) setMode(map[k]);
 }
 window.addEventListener('keydown', onKey, true);
@@ -1551,11 +1636,9 @@ const recentList = [];
 
 function selectEmoji(em){
   state.emoji = em;
-  palette.querySelectorAll('.em').forEach(o => press(o, o.dataset.em === em));
+  document.querySelectorAll('#right .em').forEach(o => press(o, o.dataset.em === em));
   current.querySelector('.big').textContent = em;
-  // keep the emoji brush if it is on; otherwise picking an emoji means stamping
-  if (state.mode !== 'stamp' && state.mode !== 'brush') setMode('stamp');
-  current.querySelector('.lbl').textContent = state.mode === 'brush' ? 'Emoji brush — drag to paint' : 'Stamp mode — drag to place';
+  if (state.mode !== 'emoji') setMode('emoji');
   const at = recentList.indexOf(em);
   if (at > -1) recentList.splice(at, 1);
   recentList.unshift(em);
@@ -1565,72 +1648,277 @@ function selectEmoji(em){
   if (window.matchMedia('(max-width:900px)').matches) closeSheets();
 }
 
-function renderRecent(){
-  recent.textContent = '';
-  recentList.forEach(em => {
-    const b = document.createElement('button');
-    b.className = 'em';
-    b.textContent = em;
-    b.dataset.em = em;
-    b.setAttribute('aria-label', 'Emoji ' + em);
-    b.addEventListener('click', () => selectEmoji(em));
-    recent.appendChild(b);
-  });
+function emBtn(em){
+  const b = document.createElement('button');
+  b.className = 'em';
+  b.textContent = em;
+  b.dataset.em = em;
+  b.setAttribute('aria-label', 'Emoji ' + em);
+  b.setAttribute('aria-pressed', em === state.emoji ? 'true' : 'false');
+  b.addEventListener('click', () => selectEmoji(em));
+  return b;
 }
 
+function renderRecent(){
+  recent.textContent = '';
+  recentList.forEach(em => recent.appendChild(emBtn(em)));
+}
+
+/* ---- the emoji this machine can draw, by theme ---- */
+const glyphOK = new Map();
+const canDraw = em => { if (!glyphOK.has(em)) glyphOK.set(em, glyphSupported(em)); return glyphOK.get(em); };
+
 let dropped = 0;
-GROUPS.forEach((g, gi) => {
+const themeSections = [];
+GROUPS.forEach(g => {
   const seenHere = new Set();
   const list = g.list.filter(em => {
     if (seenHere.has(em)) return false;
     seenHere.add(em);
-    const ok = glyphSupported(em);
+    const ok = canDraw(em);
     if (!ok) dropped++;
     return ok;
   });
   if (!list.length) return;
   paletteGroups.push(list);
+  themeSections.push({name: g.name, tint: g.tint, list});
+});
+const allEmoji = [...new Set(themeSections.flatMap(s => s.list))];
 
-  const sect = document.createElement('div');
-  sect.className = 'sect';
-  sect.dataset.tint = g.tint;
-  sect.id = 'sec' + gi;
-  const h = document.createElement('h2');
-  h.textContent = g.name;
-  sect.appendChild(h);
-  const grid = document.createElement('div');
-  grid.className = 'grid';
-  list.forEach(em => {
-    const b = document.createElement('button');
-    b.className = 'em';
-    b.textContent = em;
-    b.dataset.em = em;
-    b.setAttribute('aria-label', 'Emoji ' + em);
-    b.addEventListener('click', () => selectEmoji(em));
-    grid.appendChild(b);
-  });
-  sect.appendChild(grid);
-  palette.appendChild(sect);
+/* ---- colour of an emoji: draw it small, find the strongest hue ---- */
+const emColor = (() => {
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const x = c.getContext('2d', {willReadFrequently:true});
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '26px sans-serif';
+  const cache = new Map();
+  return em => {
+    if (cache.has(em)) return cache.get(em);
+    x.clearRect(0, 0, 32, 32);
+    x.fillText(em, 16, 17);
+    const d = x.getImageData(0, 0, 32, 32).data;
+    const bins = new Float32Array(24), binL = new Float32Array(24);
+    let n = 0, colourful = 0, lsum = 0;
+    for (let i = 0; i < d.length; i += 4){
+      if (d[i+3] < 120) continue;
+      const r = d[i] / 255, g = d[i+1] / 255, b = d[i+2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, ch = mx - mn;
+      n++; lsum += l;
+      if (ch < 0.2 || l < 0.12 || l > 0.93) continue;
+      let h = mx === r ? ((g - b) / ch) % 6 : mx === g ? (b - r) / ch + 2 : (r - g) / ch + 4;
+      h = (h * 60 + 360) % 360;
+      const k = Math.floor(h / 15);
+      bins[k] += ch; binL[k] += l * ch; colourful++;
+    }
+    let info;
+    if (!n || colourful / n < 0.18){
+      info = {gray: true, l: n ? lsum / n : 0.5};
+    } else {
+      let best = 0;
+      for (let k = 1; k < 24; k++) if (bins[k] > bins[best]) best = k;
+      info = {gray: false, h: best * 15 + 7.5, l: binL[best] / bins[best]};
+    }
+    cache.set(em, info);
+    return info;
+  };
+})();
 
-  const chip = document.createElement('button');
-  chip.textContent = g.name;
-  chip.addEventListener('click', () => {
-    $('#right').scrollTo({top: sect.offsetTop - chips.offsetHeight, behavior:'smooth'});
+const BANDS = [
+  ['Red', 1], ['Orange', 5], ['Brown', 5], ['Yellow', 3], ['Green', 4], ['Cyan', 2],
+  ['Blue', 2], ['Purple', 6], ['Pink', 1], ['White & gray', 2], ['Black', 6]
+];
+function bandOf(c){
+  if (c.gray) return c.l > 0.62 ? 'White & gray' : c.l < 0.3 ? 'Black' : 'White & gray';
+  const h = c.h;
+  if (h < 15 || h >= 340) return 'Red';
+  if (h < 45) return c.l < 0.42 ? 'Brown' : 'Orange';
+  if (h < 70) return 'Yellow';
+  if (h < 165) return 'Green';
+  if (h < 200) return 'Cyan';
+  if (h < 255) return 'Blue';
+  if (h < 295) return 'Purple';
+  return 'Pink';
+}
+function colourSections(){
+  const by = {};
+  allEmoji.forEach(em => { const b = bandOf(emColor(em)); (by[b] = by[b] || []).push(em); });
+  const key = em => { const c = emColor(em); return c.gray ? -c.l : ((c.h + 20) % 360) + (1 - c.l) * 10; };
+  return BANDS.filter(([name]) => by[name]).map(([name, tint]) =>
+    ({name, tint, list: by[name].sort((a, b) => key(a) - key(b))}));
+}
+
+/* ---- names, keywords and age come from open emoji data, fetched on demand ---- */
+const base = em => em.replace(/️/g, '');
+let meta = null, metaLoading = null;
+function loadMeta(){
+  if (meta) return Promise.resolve(meta);
+  if (metaLoading) return metaLoading;
+  metaLoading = Promise.all([
+    fetch('https://cdn.jsdelivr.net/npm/unicode-emoji-json@0.6.0/data-by-emoji.json').then(r => r.json()),
+    fetch('https://cdn.jsdelivr.net/npm/emojilib@3.0.12/dist/emoji-en-US.json').then(r => r.json()).catch(() => ({}))
+  ]).then(([info, words]) => {
+    const m = new Map();
+    Object.entries(info).forEach(([em, v]) => m.set(base(em), {em, name: v.name, ver: parseFloat(v.emoji_version) || 0, words: ''}));
+    Object.entries(words).forEach(([em, kw]) => {
+      const k = base(em), e = m.get(k) || {em, name: kw[0].replace(/_/g, ' '), ver: 0, words: ''};
+      e.words = kw.join(' ').replace(/_/g, ' ').toLowerCase();
+      m.set(k, e);
+    });
+    meta = m;
+    return m;
+  }).catch(err => { metaLoading = null; throw err; });
+  return metaLoading;
+}
+const metaOf = em => meta && meta.get(base(em));
+
+function nameSections(){
+  const sorted = allEmoji.slice().sort((a, b) =>
+    ((metaOf(a) || {}).name || '~').localeCompare((metaOf(b) || {}).name || '~'));
+  const by = new Map();
+  sorted.forEach(em => {
+    const n = (metaOf(em) || {}).name || '#';
+    const L = /[a-z]/i.test(n[0]) ? n[0].toUpperCase() : '#';
+    if (!by.has(L)) by.set(L, []);
+    by.get(L).push(em);
   });
-  chips.appendChild(chip);
+  return [...by].map(([name, list], i) => ({name, tint: (i % 6) + 1, list}));
+}
+function newestSections(){
+  const by = new Map();
+  allEmoji.forEach(em => {
+    const v = (metaOf(em) || {}).ver || 0;
+    const k = v >= 6 ? 'Emoji ' + v.toFixed(1) : v >= 1 ? 'Classic (2010–2016)' : 'Other';
+    if (!by.has(k)) by.set(k, {v: v >= 6 ? v : v >= 1 ? 1 : 0, list: []});
+    by.get(k).list.push(em);
+  });
+  return [...by].sort((a, b) => b[1].v - a[1].v).map(([name, o], i) => ({name, tint: (i % 6) + 1, list: o.list}));
+}
+
+/* ---- draw the palette in the chosen order ---- */
+function renderSections(sections){
+  palette.textContent = '';
+  chips.textContent = '';
+  sections.forEach(s => {
+    const sect = document.createElement('div');
+    sect.className = 'sect';
+    sect.dataset.tint = s.tint;
+    const h = document.createElement('h2');
+    h.textContent = s.name;
+    sect.appendChild(h);
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    s.list.forEach(em => grid.appendChild(emBtn(em)));
+    sect.appendChild(grid);
+    palette.appendChild(sect);
+
+    const chip = document.createElement('button');
+    chip.textContent = s.name;
+    chip.addEventListener('click', () => {
+      $('#right').scrollTo({top: sect.offsetTop - chips.offsetHeight, behavior:'smooth'});
+    });
+    chips.appendChild(chip);
+  });
+  if (dropped){
+    const note = document.createElement('span');
+    note.id = 'fontnote';
+    note.textContent = dropped + ' hidden — no font coverage';
+    chips.appendChild(note);
+  }
+}
+
+function renderSort(){
+  const mode = state.sort;
+  if (mode === 'color') return renderSections(colourSections());
+  if (mode === 'name' || mode === 'new'){
+    if (!meta){
+      renderSections(themeSections);
+      loadMeta().then(() => { if (state.sort === mode) renderSort(); })
+                .catch(() => { chips.insertAdjacentHTML('afterbegin', '<span id="fontnote">Could not load emoji names — showing themes.</span>'); });
+      return;
+    }
+    return renderSections(mode === 'name' ? nameSections() : newestSections());
+  }
+  renderSections(themeSections);
+}
+$('#sort').addEventListener('change', e => {
+  state.sort = e.target.value;
+  renderSort();
+  $('#right').scrollTo({top: 0});
+  scheduleSave();
 });
 
-const firstBtn = palette.querySelector('.em');
-if (firstBtn){
-  state.emoji = firstBtn.dataset.em;
-  current.querySelector('.big').textContent = state.emoji;
-  firstBtn.setAttribute('aria-pressed','true');
+/* ---- search: English names and keywords, a few Latvian words, colours, themes ---- */
+const LV = {kakis:'cat', suns:'dog', sirds:'heart', zieds:'flower', puke:'flower', koks:'tree', saule:'sun',
+  meness:'moon', zvaigzne:'star', makonis:'cloud', lietus:'rain', sniegs:'snow', uguns:'fire', udens:'water',
+  jura:'ocean', zivs:'fish', putns:'bird', maja:'house', masina:'car', auto:'car', ediens:'food', abols:'apple',
+  smaids:'smile', seja:'face', roka:'hand', muzika:'music', zals:'green', sarkans:'red', zils:'blue',
+  dzeltens:'yellow', melns:'black', balts:'white', roza:'pink', violets:'purple', oranzs:'orange', bruns:'brown',
+  zirgs:'horse', pele:'mouse', lacis:'bear', zakis:'rabbit', lapsa:'fox', kukainis:'bug', taurins:'butterfly',
+  bite:'bee', sene:'mushroom', davana:'gift', svetki:'party', ziemassvetki:'christmas', bumba:'ball',
+  kronis:'crown', dimants:'gem', milestiba:'love', laimigs:'happy', skumjs:'sad', dusmigs:'angry', suns2:'dog',
+  ogas:'berry', zemene:'strawberry', kuka:'cake', torte:'cake', kafija:'coffee', te:'tea', varde:'frog',
+  cuska:'snake', puce:'owl', pukes:'flower', lapa:'leaf', mezs:'tree', kalns:'mountain', laiva:'boat',
+  lidmasina:'airplane', raķete:'rocket', raketе:'rocket', planeta:'planet', zeme:'earth', vejs:'wind',
+  varaviksne:'rainbow', spoks:'ghost', robots:'robot', burvis:'mage', pasaka:'fairy', vienradzis:'unicorn',
+  purvs:'swamp', akmens:'rock', gliemezis:'snail', vista:'chicken', govs:'cow', cuka:'pig', aita:'sheep'};
+const plain = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+const results = $('#results');
+let searchTimer = null;
+function runSearch(){
+  const q = plain($('#search').value);
+  if (!q){
+    results.hidden = true; palette.hidden = false; chips.hidden = false;
+    return;
+  }
+  results.hidden = false; palette.hidden = true; chips.hidden = true;
+  const terms = q.split(/\s+/).map(w => LV[w] || w);
+  const scored = new Map();
+  const add = (em, s) => { if (canDraw(em)) scored.set(em, Math.max(scored.get(em) || 0, s)); };
+
+  // themes and colours by name
+  themeSections.forEach(s => { if (terms.some(t => plain(s.name).startsWith(t))) s.list.forEach(em => add(em, 2)); });
+  BANDS.forEach(([name]) => {
+    if (terms.some(t => t.length > 2 && plain(name).startsWith(t)))
+      allEmoji.forEach(em => { if (bandOf(emColor(em)) === name) add(em, 1); });
+  });
+  // names and keywords — every term has to match
+  if (meta){
+    meta.forEach(e => {
+      const name = e.name.toLowerCase(), hay = name + ' ' + e.words;
+      if (!terms.every(t => hay.includes(t))) return;
+      const t0 = terms[0], words = name.split(' ');
+      add(e.em, name === t0 ? 8 : name.startsWith(t0 + ' ') ? 7 : words.includes(t0) ? 6 :
+                name.includes(t0) ? 5 : 3);
+    });
+  }
+  const list = [...scored].sort((a, b) => b[1] - a[1]).map(([em]) => em).slice(0, 180);
+
+  results.textContent = '';
+  if (!meta){
+    const p = document.createElement('div');
+    p.className = 'hint';
+    p.textContent = 'Loading emoji names…';
+    results.appendChild(p);
+    loadMeta().then(runSearch).catch(() => { p.textContent = 'Could not load emoji names — try a theme or colour (food, red).'; });
+  }
+  if (!list.length && meta){
+    results.innerHTML = '<div class="none">No emoji found. Try another word, a theme (food, animals) or a colour (red, green).</div>';
+    return;
+  }
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  list.forEach(em => grid.appendChild(emBtn(em)));
+  results.appendChild(grid);
 }
-if (dropped){
-  const note = document.createElement('span');
-  note.id = 'fontnote';
-  note.textContent = dropped + ' hidden — no font coverage';
-  chips.appendChild(note);
+$('#search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 120); });
+$('#search').addEventListener('focus', () => { loadMeta().catch(() => {}); });
+
+renderSort();
+if (allEmoji.length){
+  state.emoji = allEmoji[0];
+  current.querySelector('.big').textContent = state.emoji;
+  palette.querySelectorAll('.em').forEach(o => press(o, o.dataset.em === state.emoji));
 }
 
 // mobile sheets
@@ -1648,6 +1936,9 @@ document.querySelectorAll('[data-sheet]').forEach(b => {
   });
 });
 sheetbg.addEventListener('click', closeSheets);
+
+setMode(state.mode);
+syncSym();
 
 // the last save is flushed if the tab is closed mid-wait
 window.addEventListener('pagehide', () => { if (saveTimer){ clearTimeout(saveTimer); saveNow(); } });
