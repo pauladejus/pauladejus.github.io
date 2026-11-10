@@ -1460,7 +1460,12 @@ function setMode(m){
   if (lbl) lbl.textContent = m === 'emoji' ? 'tap or drag on the canvas' : 'tap any emoji to use it';
 }
 document.querySelectorAll('[data-mode]').forEach(b => {
-  b.addEventListener('click', () => { setMode(b.dataset.mode); scheduleSave(); });
+  b.addEventListener('click', () => {
+    setMode(b.dataset.mode);
+    scheduleSave();
+    // on a phone, picking the Emoji tool opens the emoji list right away
+    if (b.dataset.mode === 'emoji' && b.closest('#tools2')) openSheet('right');
+  });
 });
 
 document.querySelectorAll('[data-shape]').forEach(b => {
@@ -1936,6 +1941,11 @@ document.querySelectorAll('[data-sheet]').forEach(b => {
   });
 });
 sheetbg.addEventListener('click', closeSheets);
+function openSheet(id){
+  closeSheets();
+  $('#' + id).classList.add('open');
+  sheetbg.classList.add('on');
+}
 
 setMode(state.mode);
 syncSym();
